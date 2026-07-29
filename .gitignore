@@ -20,3 +20,5 @@ archive/
 
 # OS/editor
 .DS_Store
+
+.claude
