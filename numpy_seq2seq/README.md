@@ -126,7 +126,8 @@ numerical derivative matches the analytic gradient from `backward()` to
 python3 -m venv .venv && .venv/bin/pip install numpy   # one-time setup
 
 .venv/bin/python numpy_seq2seq/gradcheck.py             # verify backward pass is correct
-.venv/bin/python numpy_seq2seq/train.py --epochs 12     # train (~1 min/epoch on CPU)
+.venv/bin/python numpy_seq2seq/train.py --epochs 60     # train (~40s/epoch on CPU); stops early once
+                                                          # validation loss stops improving (--patience, default 5)
 .venv/bin/python numpy_seq2seq/generate.py --val_index 3
 .venv/bin/python numpy_seq2seq/generate.py --article_file some_article.txt
 ```
@@ -157,3 +158,16 @@ expect and can show your instructor:
   than being uniform — this is the part worth walking through in
   `generate.py`'s printed heatmap, since it's the clearest visual evidence
   the attention mechanism is doing something meaningful.
+
+**On overfitting:** with only ~2000 training examples, training loss will
+keep dropping far past the point where the model is actually still
+generalizing — it starts memorizing training-set phrases instead. You'll
+see this as: validation-set summaries becoming fluent-sounding but *topically
+wrong* for the specific article, and attention collapsing onto the same 1-2
+words for every generated token instead of tracking different words. This is
+exactly why `train.py` tracks a separate **validation loss** each epoch and
+early-stops (`--patience`, default 5 epochs with no improvement) — the
+checkpoint it saves is always the one with the best validation loss, not
+just whatever the last epoch happened to be. If you want to see the
+overfitting happen anyway (it's a good thing to show an instructor), just
+raise `--patience` to a big number so it keeps training past the best point.

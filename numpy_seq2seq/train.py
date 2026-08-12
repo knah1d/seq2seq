@@ -36,6 +36,19 @@ def ids_to_text(ids, itos):
     return " ".join(words)
 
 
+def evaluate(model, enc_ids, dec_ids, batch_size, rng):
+    """Validation-set loss (no backward pass) - the honest signal for
+    whether the model is generalizing, since training loss keeps dropping
+    even after the model starts just memorizing the training set."""
+    total_loss_tokens = 0.0
+    total_tokens = 0.0
+    for enc_batch, dec_batch in iterate_batches(enc_ids, dec_ids, batch_size, rng, shuffle=False):
+        avg_loss, num_real, _ = model.forward(enc_batch, dec_batch)
+        total_loss_tokens += avg_loss * num_real
+        total_tokens += num_real
+    return total_loss_tokens / max(total_tokens, 1.0)
+
+
 def show_samples(model, ds, num_samples=2):
     itos = ds["itos"]
     enc_ids = ds["enc_ids_val"][:num_samples]
@@ -61,6 +74,8 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--checkpoint", type=str, default="checkpoint.npz")
     parser.add_argument("--sample_every", type=int, default=1)
+    parser.add_argument("--patience", type=int, default=5,
+                         help="stop after this many epochs with no validation-loss improvement")
     args = parser.parse_args()
 
     ds = prepare_dataset(
@@ -81,6 +96,9 @@ def main():
     enc_ids_train, dec_ids_train = ds["enc_ids_train"], ds["dec_ids_train"]
     num_batches = int(np.ceil(len(enc_ids_train) / args.batch_size))
 
+    best_val_loss = float("inf")
+    epochs_without_improvement = 0
+
     for epoch in range(1, args.epochs + 1):
         epoch_start = time.time()
         total_loss_tokens = 0.0
@@ -99,18 +117,33 @@ def main():
                 print(f"  epoch {epoch} batch {b}/{num_batches} "
                       f"running_loss={total_loss_tokens / total_tokens:.4f}")
 
-        epoch_loss = total_loss_tokens / total_tokens
-        ppl = float(np.exp(min(epoch_loss, 20)))
+        train_loss = total_loss_tokens / total_tokens
+        train_ppl = float(np.exp(min(train_loss, 20)))
+
+        val_loss = evaluate(model, ds["enc_ids_val"], ds["dec_ids_val"], args.batch_size, rng)
+        val_ppl = float(np.exp(min(val_loss, 20)))
+
         elapsed = time.time() - epoch_start
-        print(f"epoch {epoch}/{args.epochs} - loss={epoch_loss:.4f} "
-              f"ppl={ppl:.2f} ({elapsed:.1f}s)")
+        print(f"epoch {epoch}/{args.epochs} - train_loss={train_loss:.4f} train_ppl={train_ppl:.2f} "
+              f"val_loss={val_loss:.4f} val_ppl={val_ppl:.2f} ({elapsed:.1f}s)")
+
+        if val_loss < best_val_loss - 1e-4:
+            best_val_loss = val_loss
+            epochs_without_improvement = 0
+            model.save(args.checkpoint)
+            print(f"  -> new best val_loss, saved checkpoint to {args.checkpoint}")
+        else:
+            epochs_without_improvement += 1
+            print(f"  -> no val_loss improvement ({epochs_without_improvement}/{args.patience})")
 
         if epoch % args.sample_every == 0:
             show_samples(model, ds)
 
-        model.save(args.checkpoint)
+        if epochs_without_improvement >= args.patience:
+            print(f"Early stopping: no val_loss improvement for {args.patience} epochs in a row.")
+            break
 
-    print(f"Saved final model to {args.checkpoint}")
+    print(f"Best val_loss={best_val_loss:.4f}, checkpoint saved to {args.checkpoint}")
 
 
 if __name__ == "__main__":
