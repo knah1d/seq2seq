@@ -81,7 +81,15 @@ def evaluate_rouge(model, ds, batch_size, max_examples=222):
         for j in range(len(enc_batch)):
             predictions.append(ids_to_tokens(pred_batch[j], itos))
             references.append(ids_to_tokens(ref_ids[start + j], itos))
-    return rouge_scores(predictions, references)
+
+    scores = rouge_scores(predictions, references)
+    # Fraction of DISTINCT predictions. A decoder that has stopped reading its
+    # input emits near-identical text for every article - which happened, and
+    # was only caught by eyeballing samples. As a number it is unmissable:
+    # healthy is > 0.8, total collapse approaches 1/len(predictions).
+    distinct = len({" ".join(p) for p in predictions})
+    scores["diversity"] = distinct / max(len(predictions), 1)
+    return scores
 
 
 def lead_baseline_rouge(ds, max_examples=222):
@@ -133,6 +141,9 @@ def main():
     parser.add_argument("--clip_norm", type=float, default=5.0)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--weight_decay", type=float, default=1e-5)
+    parser.add_argument("--tie_weights", action="store_true",
+                         help="reuse W_emb as the output layer (cuts ~2M params and lets "
+                              "the output side inherit the encoder's much larger supervision)")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--checkpoint", type=str, default="checkpoint.npz")
     parser.add_argument("--sample_every", type=int, default=1)
@@ -155,8 +166,11 @@ def main():
 
     model = Seq2SeqAttention(
         vocab_size=len(ds["itos"]), emb_dim=args.emb_dim,
-        hidden_size=args.hidden_size, dropout=args.dropout, seed=args.seed,
+        hidden_size=args.hidden_size, dropout=args.dropout,
+        tie_weights=args.tie_weights, seed=args.seed,
     )
+    n_params = sum(p.size for p in model.params.values())
+    print(f"parameters: {n_params:,}  (tie_weights={args.tie_weights})")
     optimizer = Adam(model.params, lr=args.lr, weight_decay=args.weight_decay)
     rng = np.random.RandomState(args.seed)
 
@@ -216,7 +230,7 @@ def main():
         print(f"epoch {epoch}/{args.epochs} - train_loss={train_loss:.4f} "
               f"val_loss={val_loss:.4f} val_ppl={val_ppl:.2f} | "
               f"R1={rouge['rouge1']:.3f} R2={rouge['rouge2']:.3f} RL={rouge['rougeL']:.3f} "
-              f"| lr={current_lr:.2e} ({elapsed:.1f}s)", flush=True)
+              f"div={rouge['diversity']:.2f} | lr={current_lr:.2e} ({elapsed:.1f}s)", flush=True)
 
         # Keep the checkpoint with the best ROUGE-L - that is the summary
         # quality we actually care about.

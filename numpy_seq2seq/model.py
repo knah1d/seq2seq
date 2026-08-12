@@ -37,11 +37,13 @@ BANNED_OUTPUT_IDS = (PAD_ID, SOS_ID, UNK_ID)
 
 
 class Seq2SeqAttention:
-    def __init__(self, vocab_size, emb_dim=96, hidden_size=128, dropout=0.0, seed=0):
+    def __init__(self, vocab_size, emb_dim=96, hidden_size=128, dropout=0.0,
+                 tie_weights=False, seed=0):
         self.V = vocab_size
         self.E = emb_dim
         self.H = hidden_size
         self.dropout = dropout
+        self.tie_weights = tie_weights
         self.rng = np.random.RandomState(seed + 1234)
         rng = np.random.RandomState(seed)
 
@@ -54,9 +56,53 @@ class Seq2SeqAttention:
         params["b_bridge_h"] = np.zeros(hidden_size, dtype=np.float64)
         params["W_bridge_c"] = init_matrix(rng, (hidden_size, hidden_size))
         params["b_bridge_c"] = np.zeros(hidden_size, dtype=np.float64)
-        params["W_out"] = init_matrix(rng, (hidden_size * 2, vocab_size))
+        if tie_weights:
+            # Weight tying: a word's OUTPUT representation is its input
+            # embedding. We project concat(h, context) down to emb_dim and
+            # score against W_emb itself:
+            #     logits = (concat(h, ctx) @ W_proj) @ W_emb.T + b_out
+            #
+            # This is not just a parameter cut. W_emb is trained by every
+            # encoder token the model reads (~133k here), while a separate
+            # W_out would only ever see the decoder's targets (~12k) - an 11x
+            # difference in supervision. Tying lets the output side inherit
+            # the encoder's much larger signal, which is exactly what the
+            # data-starved output layer needs.
+            params["W_proj"] = init_matrix(rng, (hidden_size * 2, emb_dim))
+        else:
+            params["W_out"] = init_matrix(rng, (hidden_size * 2, vocab_size))
         params["b_out"] = np.zeros(vocab_size, dtype=np.float64)
         self.params = params
+
+    # ------------------------------------------------------------------
+    # Output layer: either a plain dense layer (untied) or the tied path
+    # above. Kept in one place so forward/backward/decode cannot disagree.
+    # ------------------------------------------------------------------
+    def _output_forward(self, out_input):
+        params = self.params
+        if not self.tie_weights:
+            logits, dense_cache = dense_forward(out_input, params["W_out"], params["b_out"])
+            return logits, ("untied", dense_cache)
+        proj = out_input @ params["W_proj"]                  # (B, E)
+        logits = proj @ params["W_emb"].T + params["b_out"]  # (B, V)
+        return logits, ("tied", (out_input, proj))
+
+    def _output_backward(self, d_logits, cache, grads):
+        """Returns d_out_input and accumulates output-layer grads in place."""
+        kind, inner = cache
+        if kind == "untied":
+            d_out_input, d_W_out, d_b_out = dense_backward(d_logits, inner)
+            grads["W_out"] = grads.get("W_out", 0.0) + d_W_out
+            grads["b_out"] = grads.get("b_out", 0.0) + d_b_out
+            return d_out_input
+        out_input, proj = inner
+        params = self.params
+        grads["b_out"] = grads.get("b_out", 0.0) + d_logits.sum(axis=0)
+        # logits = proj @ W_emb.T  ->  both factors need a gradient
+        grads["W_emb"] = grads.get("W_emb", 0.0) + d_logits.T @ proj
+        d_proj = d_logits @ params["W_emb"]
+        grads["W_proj"] = grads.get("W_proj", 0.0) + out_input.T @ d_proj
+        return d_proj @ params["W_proj"].T
 
     # ------------------------------------------------------------------
     # Encoder: run the LSTM left-to-right over the article tokens.
@@ -190,7 +236,7 @@ class Seq2SeqAttention:
 
             out_input = np.concatenate([h_t, context_t], axis=1)
             out_input, out_drop_mask = dropout_forward(out_input, self.dropout, self.rng, training)
-            logits_t, dense_cache = dense_forward(out_input, params["W_out"], params["b_out"])
+            logits_t, dense_cache = self._output_forward(out_input)
 
             loss_t, real_t, d_logits_t = softmax_ce_loss(
                 logits_t, dec_target_ids[:, t], dec_mask[:, t]
@@ -230,9 +276,7 @@ class Seq2SeqAttention:
             attn_cache, lstm_cache, dense_cache, d_logits_t, out_drop_mask = cache["step_caches"][t]
             d_logits_t = d_logits_t / total_real
 
-            d_out_input, d_W_out, d_b_out = dense_backward(d_logits_t, dense_cache)
-            grads["W_out"] = grads.get("W_out", 0.0) + d_W_out
-            grads["b_out"] = grads.get("b_out", 0.0) + d_b_out
+            d_out_input = self._output_backward(d_logits_t, dense_cache, grads)
             d_out_input = dropout_backward(d_out_input, out_drop_mask)
             d_h_t_out, d_context_out = d_out_input[:, :H], d_out_input[:, H:]
 
@@ -292,7 +336,7 @@ class Seq2SeqAttention:
             lstm_input = np.concatenate([x_t, context_t], axis=1)
             h_t, c_t, _ = lstm_cell_forward(lstm_input, h_prev, c_prev, params, "dec")
             out_input = np.concatenate([h_t, context_t], axis=1)
-            logits_t, _ = dense_forward(out_input, params["W_out"], params["b_out"])
+            logits_t, _ = self._output_forward(out_input)
 
             # Never emit <pad>/<sos>/<unk> - see BANNED_OUTPUT_IDS.
             logits_t = logits_t.copy()
@@ -321,12 +365,14 @@ class Seq2SeqAttention:
         return outputs, alphas
 
     def save(self, path):
-        np.savez_compressed(path, **self.params, V=self.V, E=self.E, H=self.H)
+        np.savez_compressed(path, **self.params, V=self.V, E=self.E, H=self.H,
+                            tie_weights=int(self.tie_weights))
 
     @classmethod
     def load(cls, path):
         data = np.load(path)
-        model = cls(int(data["V"]), int(data["E"]), int(data["H"]))
+        tied = bool(int(data["tie_weights"])) if "tie_weights" in data else False
+        model = cls(int(data["V"]), int(data["E"]), int(data["H"]), tie_weights=tied)
         for k in model.params:
             model.params[k] = data[k]
         return model

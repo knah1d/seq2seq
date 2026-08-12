@@ -55,6 +55,30 @@ def load_pairs():
     return pairs
 
 
+def dedupe_pairs(pairs, enc_max_len):
+    """Drop articles the encoder cannot tell apart.
+
+    The BBC corpus repeats 137 stories outright (102 with the same headline
+    too), and more share an opening and diverge later. Left in, the shuffle
+    can put one copy in train and its twin in validation, so the model is
+    scored on an article it memorised - which makes the validation number,
+    and every decision based on it, untrustworthy.
+
+    The key is the first `enc_max_len` tokens, not the whole body, because
+    that is exactly what the encoder reads: two articles with identical
+    openings are the *same input* as far as the model is concerned, even if
+    they differ further down.
+    """
+    seen, unique = set(), []
+    for source, target in pairs:
+        key = " ".join(source[:enc_max_len])
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append((source, target))
+    return unique
+
+
 def split_sentences(tokens):
     """Split a token list into sentences on '.' (the '.' stays attached)."""
     sentences, current = [], []
@@ -282,14 +306,14 @@ def prepare_dataset(
         raise ValueError(f"unknown target_mode: {target_mode!r}")
     if dec_max_len is None:
         # Headlines are ~5 tokens (p90 = 7); lead sentences ~24 (p90 = 34).
-        dec_max_len = 10 if target_mode == "headline" else 40
+        dec_max_len = 12 if target_mode == "headline" else 40
     if cache_path is None:
         cache_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "data_cache.npz"
         )
 
     # The tag invalidates caches built with any older target scheme.
-    config_tag = (f"{target_mode}-skip{int(skip_opening)}-aug{int(augment)}"
+    config_tag = (f"{target_mode}-dedup2-skip{int(skip_opening)}-aug{int(augment)}"
                   f"-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}")
 
     if os.path.exists(cache_path):
@@ -308,6 +332,10 @@ def prepare_dataset(
     print("Preprocessing dataset from raw text files (first run only)...")
     raw_pairs = (load_headline_pairs() if target_mode == "headline"
                  else load_pairs())
+    n_before = len(raw_pairs)
+    raw_pairs = dedupe_pairs(raw_pairs, enc_max_len)
+    print(f"  dropped {n_before - len(raw_pairs)} duplicate articles "
+          f"({n_before} -> {len(raw_pairs)})")
 
     # Shuffle and split by ARTICLE *before* augmenting, so that no article
     # contributes sentences to both splits - otherwise validation would be

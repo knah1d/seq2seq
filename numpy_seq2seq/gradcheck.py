@@ -20,13 +20,14 @@ from model import Seq2SeqAttention
 # and finite differences would be meaningless.
 USE_DROPOUT = "--dropout" in sys.argv
 DROPOUT_P = 0.3 if USE_DROPOUT else 0.0
+TIE = "--tie" in sys.argv
 
 np.random.seed(0)
 
 VOCAB, EMB, HID = 30, 8, 10
 B, T_ENC, T_DEC = 3, 5, 4
 
-model = Seq2SeqAttention(VOCAB, EMB, HID, dropout=DROPOUT_P, seed=1)
+model = Seq2SeqAttention(VOCAB, EMB, HID, dropout=DROPOUT_P, tie_weights=TIE, seed=1)
 
 enc_ids = np.random.randint(4, VOCAB, size=(B, T_ENC)).astype(np.int32)
 enc_ids[0, -2:] = 0  # exercise the padding/masking path
@@ -46,7 +47,7 @@ def loss_fn():
     return loss
 
 
-print(f"dropout during check: {DROPOUT_P}"
+print(f"tie_weights={TIE}  dropout during check: {DROPOUT_P}"
       f"{'  (pass --dropout to enable)' if not USE_DROPOUT else ''}\n")
 
 _, _, cache = forward_fixed_mask()
@@ -55,8 +56,9 @@ grads = model.backward(cache)
 eps = 1e-5
 max_rel_err = 0.0
 checks = [
-    ("W_out", (0, 0)), ("W_out", (3, 5)),
-    ("W_emb", (5, 2)),
+    ("W_proj", (0, 0)) if TIE else ("W_out", (0, 0)),
+    ("W_proj", (3, 5)) if TIE else ("W_out", (3, 5)),
+    ("W_emb", (5, 2)), ("W_emb", (11, 4)), ("b_out", (7,)),
     ("attn_Wa", (1, 1)), ("attn_v", (2,)),
     ("enc_Wxi", (0, 0)), ("enc_Whf", (1, 2)), ("enc_Wxo", (2, 1)), ("enc_Whg", (0, 3)),
     ("dec_Wxi", (2, 3)), ("dec_Whf", (0, 0)), ("dec_Wxo", (1, 1)), ("dec_Whg", (3, 2)),
