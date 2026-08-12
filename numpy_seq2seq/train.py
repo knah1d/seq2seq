@@ -148,8 +148,9 @@ def main():
 
     baseline = lead_baseline_rouge(ds)
     print(f"lead-1 baseline (emit the article's first sentence): "
-          f"R1={baseline['rouge1']:.3f} R2={baseline['rouge2']:.3f} RL={baseline['rougeL']:.3f}")
-    print("  -> the model needs to beat this to have learned anything useful.\n")
+          f"R1={baseline['rouge1']:.3f} R2={baseline['rouge2']:.3f} RL={baseline['rougeL']:.3f}",
+          flush=True)
+    print("  -> the model needs to beat this to have learned anything useful.\n", flush=True)
 
     enc_ids_train, dec_ids_train = ds["enc_ids_train"], ds["dec_ids_train"]
     num_batches = int(np.ceil(len(enc_ids_train) / args.batch_size))
@@ -181,9 +182,14 @@ def main():
 
             total_loss_tokens += avg_loss * num_real
             total_tokens += num_real
+            # flush=True: piping to `tee` makes stdout block-buffered, so
+            # without this the run looks frozen for minutes at a time.
             if b % 20 == 0 or b == num_batches:
+                so_far = time.time() - epoch_start
+                eta = so_far / b * (num_batches - b)
                 print(f"  epoch {epoch} batch {b}/{num_batches} "
-                      f"running_loss={total_loss_tokens / total_tokens:.4f}")
+                      f"loss={total_loss_tokens / total_tokens:.4f} "
+                      f"({so_far:.0f}s elapsed, ~{eta:.0f}s left in epoch)", flush=True)
 
         train_loss = total_loss_tokens / total_tokens
         train_ppl = float(np.exp(min(train_loss, 20)))
@@ -196,7 +202,7 @@ def main():
         print(f"epoch {epoch}/{args.epochs} - train_loss={train_loss:.4f} "
               f"val_loss={val_loss:.4f} val_ppl={val_ppl:.2f} | "
               f"R1={rouge['rouge1']:.3f} R2={rouge['rouge2']:.3f} RL={rouge['rougeL']:.3f} "
-              f"| lr={current_lr:.2e} ({elapsed:.1f}s)")
+              f"| lr={current_lr:.2e} ({elapsed:.1f}s)", flush=True)
 
         # Keep the checkpoint with the best ROUGE-L - that is the summary
         # quality we actually care about.
