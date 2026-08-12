@@ -17,20 +17,32 @@ def clip_grads_(grads, max_norm=5.0):
 
 
 class Adam:
-    def __init__(self, params, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8):
+    def __init__(self, params, lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8,
+                 weight_decay=0.0):
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
+        self.weight_decay = weight_decay
         self.t = 0
         self.m = {k: np.zeros_like(v) for k, v in params.items()}
         self.v = {k: np.zeros_like(v) for k, v in params.items()}
+
+    def set_lr(self, lr):
+        """Used by the training loop to decay the learning rate on plateau."""
+        self.lr = lr
 
     def step(self, params, grads):
         self.t += 1
         b1, b2, eps = self.beta1, self.beta2, self.eps
         for k in params:
             g = grads[k]
+            # Weight decay pulls weights toward zero each step, discouraging
+            # the big weights a memorizing model develops. Biases are left
+            # alone - shrinking them just shifts the function, it does not
+            # reduce capacity.
+            if self.weight_decay > 0.0 and params[k].ndim > 1:
+                g = g + self.weight_decay * params[k]
             self.m[k] = b1 * self.m[k] + (1 - b1) * g
             self.v[k] = b2 * self.v[k] + (1 - b2) * (g * g)
             m_hat = self.m[k] / (1 - b1 ** self.t)

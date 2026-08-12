@@ -55,6 +55,54 @@ def load_pairs():
     return pairs
 
 
+def split_sentences(tokens):
+    """Split a token list into sentences on '.' (the '.' stays attached)."""
+    sentences, current = [], []
+    for tok in tokens:
+        current.append(tok)
+        if tok == ".":
+            sentences.append(current)
+            current = []
+    if current:
+        sentences.append(current)
+    return sentences
+
+
+def select_key_sentence(article_tokens, summary_tokens, match_len=5):
+    """Pick the training target: the summary sentence that appears EARLIEST
+    in the article.
+
+    Why not just truncate the summary? The BBC summaries are *extractive* -
+    real article sentences copied verbatim but **reordered** - so a fixed
+    truncation grabs text from anywhere in the article (measured: 61% of the
+    time the summary's first sentence starts beyond the encoder's input
+    window, and only 6% of truncated targets end at a sentence boundary, so
+    the model never learns where to stop).
+
+    Choosing the earliest-appearing summary sentence fixes both problems at
+    once: the target is a *complete* sentence (so <eos> means something) and
+    it sits near the start of the article (94% within 60 tokens, 99% within
+    120), so it is actually reachable from what the encoder can see.
+    """
+    best_pos, best_sentence = None, None
+    for sentence in split_sentences(summary_tokens):
+        if len(sentence) < 4:
+            continue
+        key = sentence[:match_len]
+        for i in range(max(0, len(article_tokens) - match_len)):
+            if article_tokens[i:i + match_len] == key:
+                if best_pos is None or i < best_pos:
+                    best_pos, best_sentence = i, sentence
+                break
+    if best_sentence is None:
+        # No verbatim match (rare) - fall back to the first real sentence.
+        for sentence in split_sentences(summary_tokens):
+            if len(sentence) >= 4:
+                return sentence
+        return summary_tokens
+    return best_sentence
+
+
 def build_vocab(token_lists, vocab_size):
     """Frequency-based vocabulary capped at vocab_size (including specials)."""
     counts = {}
@@ -84,18 +132,21 @@ def encode(tokens, stoi, max_len, add_sos_eos):
 
 def prepare_dataset(
     vocab_size=8000,
-    enc_max_len=60,
-    dec_max_len=20,
+    enc_max_len=120,
+    dec_max_len=32,
     val_fraction=0.1,
     seed=0,
     cache_path=None,
 ):
     """Build (or load from cache) the full encoded dataset + vocab.
 
+    The decoder target is the article's "key sentence" - see
+    select_key_sentence() for why that beats truncating the raw summary.
+
     Returns a dict with keys:
       enc_ids_train, dec_ids_train, enc_ids_val, dec_ids_val  (int32 arrays)
       stoi, itos
-      raw_val: list of (article_tokens, summary_tokens) for the val split,
+      raw_val: list of (article_tokens, target_tokens) for the val split,
                kept for human-readable inspection in generate.py
     """
     if cache_path is None:
@@ -103,7 +154,8 @@ def prepare_dataset(
             os.path.dirname(os.path.abspath(__file__)), "data_cache.npz"
         )
 
-    config_tag = f"{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}"
+    # "keysent" in the tag invalidates caches built with the old truncated targets.
+    config_tag = f"keysent-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}"
 
     if os.path.exists(cache_path):
         cached = np.load(cache_path, allow_pickle=True)
@@ -119,7 +171,10 @@ def prepare_dataset(
             }
 
     print("Preprocessing dataset from raw text files (first run only)...")
-    pairs = load_pairs()
+    raw_pairs = load_pairs()
+    # Replace each full summary with the single key sentence we train on.
+    pairs = [(article, select_key_sentence(article, summary))
+             for article, summary in raw_pairs]
 
     rng = np.random.RandomState(seed)
     order = rng.permutation(len(pairs))

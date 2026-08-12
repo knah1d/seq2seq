@@ -21,20 +21,28 @@ from layers import (
     embedding_forward, embedding_backward,
     lstm_cell_params, lstm_cell_forward, lstm_cell_backward,
     attention_params, precompute_encoder_proj, attention_forward, attention_backward,
-    dense_forward, dense_backward,
+    dense_forward, dense_backward, dropout_forward, dropout_backward,
     softmax_ce_loss, init_matrix,
 )
 
 PAD_ID = 0
 SOS_ID = 1
 EOS_ID = 2
+UNK_ID = 3
+
+# Tokens the decoder must never emit: padding/start markers are structural,
+# and <unk> is a placeholder for a word we dropped from the vocabulary -
+# printing it is never the right answer, so we mask it out at decode time.
+BANNED_OUTPUT_IDS = (PAD_ID, SOS_ID, UNK_ID)
 
 
 class Seq2SeqAttention:
-    def __init__(self, vocab_size, emb_dim=96, hidden_size=128, seed=0):
+    def __init__(self, vocab_size, emb_dim=96, hidden_size=128, dropout=0.0, seed=0):
         self.V = vocab_size
         self.E = emb_dim
         self.H = hidden_size
+        self.dropout = dropout
+        self.rng = np.random.RandomState(seed + 1234)
         rng = np.random.RandomState(seed)
 
         params = {}
@@ -56,12 +64,13 @@ class Seq2SeqAttention:
     # update) so the final timestep always holds the last *real* state,
     # which seeds the decoder via the bridge layers.
     # ------------------------------------------------------------------
-    def _encode(self, enc_ids):
+    def _encode(self, enc_ids, training=False):
         B, T_enc = enc_ids.shape
         H = self.H
         enc_mask = (enc_ids != PAD_ID).astype(np.float64)  # (B, T_enc)
 
         X_enc, emb_cache = embedding_forward(enc_ids, self.params["W_emb"])  # (B,T_enc,E)
+        X_enc, enc_drop_mask = dropout_forward(X_enc, self.dropout, self.rng, training)
 
         h_prev = np.zeros((B, H), dtype=np.float64)
         c_prev = np.zeros((B, H), dtype=np.float64)
@@ -89,7 +98,7 @@ class Seq2SeqAttention:
         cache = {
             "enc_ids": enc_ids, "emb_cache": emb_cache, "step_caches": step_caches,
             "H_enc": H_enc, "h_final": h_final, "c_final": c_final,
-            "s0_pre": s0_pre, "c0_pre": c0_pre,
+            "s0_pre": s0_pre, "c0_pre": c0_pre, "enc_drop_mask": enc_drop_mask,
             "enc_mask": enc_mask, "T_enc": T_enc, "B": B,
         }
         return H_enc, U_H_enc, enc_mask, s0, c0, cache
@@ -142,6 +151,7 @@ class Seq2SeqAttention:
             for k, v in lstm_grads.items():
                 grads[k] = grads.get(k, 0.0) + v
 
+        d_X_enc = dropout_backward(d_X_enc, cache["enc_drop_mask"])
         d_W_emb = embedding_backward(d_X_enc, cache["emb_cache"])
         grads["W_emb"] = grads.get("W_emb", 0.0) + d_W_emb
         return grads
@@ -149,10 +159,10 @@ class Seq2SeqAttention:
     # ------------------------------------------------------------------
     # Teacher-forced decoding for training.
     # ------------------------------------------------------------------
-    def forward(self, enc_ids, dec_ids):
+    def forward(self, enc_ids, dec_ids, training=False):
         params = self.params
         B, T_dec = dec_ids.shape
-        H_enc, U_H_enc, enc_mask, s0, c0, enc_cache = self._encode(enc_ids)
+        H_enc, U_H_enc, enc_mask, s0, c0, enc_cache = self._encode(enc_ids, training)
 
         dec_input_ids = dec_ids[:, :-1]
         dec_target_ids = dec_ids[:, 1:]
@@ -160,6 +170,7 @@ class Seq2SeqAttention:
         T_step = dec_input_ids.shape[1]
 
         X_dec, dec_emb_cache = embedding_forward(dec_input_ids, params["W_emb"])
+        X_dec, dec_drop_mask = dropout_forward(X_dec, self.dropout, self.rng, training)
 
         h_prev, c_prev = s0, c0
         total_loss = 0.0
@@ -173,6 +184,7 @@ class Seq2SeqAttention:
             h_t, c_t, lstm_cache = lstm_cell_forward(lstm_input, h_prev, c_prev, params, "dec")
 
             out_input = np.concatenate([h_t, context_t], axis=1)
+            out_input, out_drop_mask = dropout_forward(out_input, self.dropout, self.rng, training)
             logits_t, dense_cache = dense_forward(out_input, params["W_out"], params["b_out"])
 
             loss_t, real_t, d_logits_t = softmax_ce_loss(
@@ -181,12 +193,13 @@ class Seq2SeqAttention:
             total_loss += loss_t
             total_real += real_t
 
-            step_caches.append((attn_cache, lstm_cache, dense_cache, d_logits_t))
+            step_caches.append((attn_cache, lstm_cache, dense_cache, d_logits_t, out_drop_mask))
             h_prev, c_prev = h_t, c_t
 
         cache = {
             "enc_cache": enc_cache, "H_enc": H_enc, "T_enc": H_enc.shape[1],
             "dec_emb_cache": dec_emb_cache, "step_caches": step_caches,
+            "dec_drop_mask": dec_drop_mask,
             "B": B, "T_step": T_step, "s0": s0, "c0": c0, "total_real": total_real,
         }
         avg_loss = total_loss / max(total_real, 1.0)
@@ -209,12 +222,13 @@ class Seq2SeqAttention:
         d_h_next = np.zeros((B, H), dtype=np.float64)
         d_c_next = np.zeros((B, H), dtype=np.float64)
         for t in reversed(range(T_step)):
-            attn_cache, lstm_cache, dense_cache, d_logits_t = cache["step_caches"][t]
+            attn_cache, lstm_cache, dense_cache, d_logits_t, out_drop_mask = cache["step_caches"][t]
             d_logits_t = d_logits_t / total_real
 
             d_out_input, d_W_out, d_b_out = dense_backward(d_logits_t, dense_cache)
             grads["W_out"] = grads.get("W_out", 0.0) + d_W_out
             grads["b_out"] = grads.get("b_out", 0.0) + d_b_out
+            d_out_input = dropout_backward(d_out_input, out_drop_mask)
             d_h_t_out, d_context_out = d_out_input[:, :H], d_out_input[:, H:]
 
             d_h_t = d_h_t_out + d_h_next
@@ -238,6 +252,7 @@ class Seq2SeqAttention:
             d_h_next = d_h_prev_cell + d_h_prev_attn
             d_c_next = d_c_prev_cell
 
+        d_X_dec = dropout_backward(d_X_dec, cache["dec_drop_mask"])
         d_W_emb_dec = embedding_backward(d_X_dec, cache["dec_emb_cache"])
         grads["W_emb"] = grads.get("W_emb", 0.0) + d_W_emb_dec
 
@@ -274,7 +289,20 @@ class Seq2SeqAttention:
             out_input = np.concatenate([h_t, context_t], axis=1)
             logits_t, _ = dense_forward(out_input, params["W_out"], params["b_out"])
 
+            # Never emit <pad>/<sos>/<unk> - see BANNED_OUTPUT_IDS.
+            logits_t = logits_t.copy()
+            logits_t[:, list(BANNED_OUTPUT_IDS)] = -np.inf
+
             next_ids = np.argmax(logits_t, axis=1)
+            # Block immediate repeats (picking the same word twice in a row)
+            # by falling back to the 2nd-best logit - a cheap, standard fix
+            # for the "new deal for the new deal for the new deal" loops an
+            # undertrained greedy decoder tends to fall into.
+            repeat = (next_ids == cur_ids) & (cur_ids != SOS_ID)
+            if repeat.any():
+                logits_masked = logits_t.copy()
+                logits_masked[repeat, next_ids[repeat]] = -np.inf
+                next_ids[repeat] = np.argmax(logits_masked[repeat], axis=1)
             next_ids = np.where(finished, PAD_ID, next_ids)
             outputs[:, t] = next_ids
             alphas[:, t, :] = alpha_t

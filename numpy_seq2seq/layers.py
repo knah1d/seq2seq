@@ -48,6 +48,26 @@ def embedding_backward(d_out, cache):
 
 
 # ----------------------------------------------------------------------
+# Dropout (inverted): during training, randomly zero a fraction p of the
+# activations and scale the survivors up by 1/(1-p) so the expected sum is
+# unchanged. At eval time it is the identity, so no rescaling is needed.
+# This stops the network leaning on any single unit and is our main defence
+# against memorizing a ~2000-example training set.
+# ----------------------------------------------------------------------
+def dropout_forward(x, p, rng, training):
+    if not training or p <= 0.0:
+        return x, None
+    keep = 1.0 - p
+    mask = (rng.random_sample(x.shape) < keep).astype(np.float64) / keep
+    return x * mask, mask
+
+
+def dropout_backward(d_out, mask):
+    """The same mask that scaled the forward pass scales the gradient."""
+    return d_out if mask is None else d_out * mask
+
+
+# ----------------------------------------------------------------------
 # LSTM cell (single timestep). Standard formulation:
 #   i_t = sigmoid(x_t Wxi + h_{t-1} Whi + bi)          input gate
 #   f_t = sigmoid(x_t Wxf + h_{t-1} Whf + bf)          forget gate

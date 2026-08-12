@@ -8,16 +8,25 @@ recompute the loss both times, estimate the derivative as
 and compare it against the analytic gradient produced by backward().
 Run this any time the layers/model math changes.
 """
+import sys
+
 import numpy as np
 
 from model import Seq2SeqAttention
+
+# Pass --dropout to additionally verify the dropout backward pass. The RNG is
+# reset before every forward so the *same* dropout mask is drawn each time -
+# otherwise the loss would change for reasons unrelated to the perturbation
+# and finite differences would be meaningless.
+USE_DROPOUT = "--dropout" in sys.argv
+DROPOUT_P = 0.3 if USE_DROPOUT else 0.0
 
 np.random.seed(0)
 
 VOCAB, EMB, HID = 30, 8, 10
 B, T_ENC, T_DEC = 3, 5, 4
 
-model = Seq2SeqAttention(VOCAB, EMB, HID, seed=1)
+model = Seq2SeqAttention(VOCAB, EMB, HID, dropout=DROPOUT_P, seed=1)
 
 enc_ids = np.random.randint(4, VOCAB, size=(B, T_ENC)).astype(np.int32)
 enc_ids[0, -2:] = 0  # exercise the padding/masking path
@@ -26,12 +35,21 @@ dec_ids[:, 0] = 1  # <sos>
 dec_ids[1, -1:] = 0  # exercise decoder padding in the loss mask
 
 
+def forward_fixed_mask():
+    """Forward with a deterministic dropout mask (see USE_DROPOUT above)."""
+    model.rng = np.random.RandomState(999)
+    return model.forward(enc_ids, dec_ids, training=USE_DROPOUT)
+
+
 def loss_fn():
-    loss, _, _ = model.forward(enc_ids, dec_ids)
+    loss, _, _ = forward_fixed_mask()
     return loss
 
 
-_, _, cache = model.forward(enc_ids, dec_ids)
+print(f"dropout during check: {DROPOUT_P}"
+      f"{'  (pass --dropout to enable)' if not USE_DROPOUT else ''}\n")
+
+_, _, cache = forward_fixed_mask()
 grads = model.backward(cache)
 
 eps = 1e-5

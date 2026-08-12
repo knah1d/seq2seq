@@ -14,6 +14,7 @@ import numpy as np
 from data import prepare_dataset, PAD
 from model import Seq2SeqAttention
 from optim import Adam, clip_grads_
+from rouge import rouge_scores
 
 
 def iterate_batches(enc_ids, dec_ids, batch_size, rng, shuffle=True):
@@ -43,10 +44,56 @@ def evaluate(model, enc_ids, dec_ids, batch_size, rng):
     total_loss_tokens = 0.0
     total_tokens = 0.0
     for enc_batch, dec_batch in iterate_batches(enc_ids, dec_ids, batch_size, rng, shuffle=False):
-        avg_loss, num_real, _ = model.forward(enc_batch, dec_batch)
+        avg_loss, num_real, _ = model.forward(enc_batch, dec_batch, training=False)
         total_loss_tokens += avg_loss * num_real
         total_tokens += num_real
     return total_loss_tokens / max(total_tokens, 1.0)
+
+
+def ids_to_tokens(ids, itos):
+    """Same as ids_to_text but returns a token list, for ROUGE."""
+    return ids_to_text(ids, itos).split()
+
+
+def evaluate_rouge(model, ds, batch_size, max_examples=222):
+    """Greedy-decode the validation set and score it with ROUGE.
+
+    Loss measures per-token confidence; ROUGE measures whether the finished
+    summary actually overlaps the reference. They diverge once the model
+    starts overfitting, which is why the checkpoint is chosen on ROUGE-L.
+    """
+    itos = ds["itos"]
+    enc_ids = ds["enc_ids_val"][:max_examples]
+    ref_ids = ds["dec_ids_val"][:max_examples]
+    dec_max_len = ds["dec_ids_val"].shape[1]
+
+    predictions, references = [], []
+    for start in range(0, len(enc_ids), batch_size):
+        enc_batch = enc_ids[start:start + batch_size]
+        pred_batch, _ = model.greedy_decode(enc_batch, max_len=dec_max_len)
+        for j in range(len(enc_batch)):
+            predictions.append(ids_to_tokens(pred_batch[j], itos))
+            references.append(ids_to_tokens(ref_ids[start + j], itos))
+    return rouge_scores(predictions, references)
+
+
+def lead_baseline_rouge(ds, max_examples=222):
+    """Honest reference point: score the trivial 'just emit the article's
+    first sentence' baseline. If the model cannot beat this, it has not
+    learned anything useful."""
+    itos = ds["itos"]
+    dec_max_len = ds["dec_ids_val"].shape[1]
+    predictions, references = [], []
+    for i in range(min(max_examples, len(ds["enc_ids_val"]))):
+        article = ids_to_tokens(ds["enc_ids_val"][i], itos)
+        lead = []
+        for tok in article[:dec_max_len]:
+            lead.append(tok)
+            if tok == ".":
+                break
+        predictions.append(lead)
+        references.append(ids_to_tokens(ds["dec_ids_val"][i], itos))
+    return rouge_scores(predictions, references)
 
 
 def show_samples(model, ds, num_samples=2):
@@ -63,19 +110,23 @@ def show_samples(model, ds, num_samples=2):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--vocab_size", type=int, default=8000)
-    parser.add_argument("--enc_max_len", type=int, default=60)
-    parser.add_argument("--dec_max_len", type=int, default=20)
+    parser.add_argument("--enc_max_len", type=int, default=120)
+    parser.add_argument("--dec_max_len", type=int, default=32)
     parser.add_argument("--emb_dim", type=int, default=96)
     parser.add_argument("--hidden_size", type=int, default=128)
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=80)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--clip_norm", type=float, default=5.0)
+    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--weight_decay", type=float, default=1e-5)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--checkpoint", type=str, default="checkpoint.npz")
     parser.add_argument("--sample_every", type=int, default=1)
-    parser.add_argument("--patience", type=int, default=5,
-                         help="stop after this many epochs with no validation-loss improvement")
+    parser.add_argument("--patience", type=int, default=6,
+                         help="stop after this many epochs with no val-ROUGE-L improvement")
+    parser.add_argument("--lr_decay_patience", type=int, default=2,
+                         help="halve the LR after this many epochs with no improvement")
     args = parser.parse_args()
 
     ds = prepare_dataset(
@@ -88,16 +139,22 @@ def main():
 
     model = Seq2SeqAttention(
         vocab_size=len(ds["itos"]), emb_dim=args.emb_dim,
-        hidden_size=args.hidden_size, seed=args.seed,
+        hidden_size=args.hidden_size, dropout=args.dropout, seed=args.seed,
     )
-    optimizer = Adam(model.params, lr=args.lr)
+    optimizer = Adam(model.params, lr=args.lr, weight_decay=args.weight_decay)
     rng = np.random.RandomState(args.seed)
+
+    baseline = lead_baseline_rouge(ds)
+    print(f"lead-1 baseline (emit the article's first sentence): "
+          f"R1={baseline['rouge1']:.3f} R2={baseline['rouge2']:.3f} RL={baseline['rougeL']:.3f}")
+    print("  -> the model needs to beat this to have learned anything useful.\n")
 
     enc_ids_train, dec_ids_train = ds["enc_ids_train"], ds["dec_ids_train"]
     num_batches = int(np.ceil(len(enc_ids_train) / args.batch_size))
 
-    best_val_loss = float("inf")
+    best_rouge_l = -1.0
     epochs_without_improvement = 0
+    current_lr = args.lr
 
     for epoch in range(1, args.epochs + 1):
         epoch_start = time.time()
@@ -106,7 +163,7 @@ def main():
         for b, (enc_batch, dec_batch) in enumerate(
             iterate_batches(enc_ids_train, dec_ids_train, args.batch_size, rng), start=1
         ):
-            avg_loss, num_real, cache = model.forward(enc_batch, dec_batch)
+            avg_loss, num_real, cache = model.forward(enc_batch, dec_batch, training=True)
             grads = model.backward(cache)
             clip_grads_(grads, max_norm=args.clip_norm)
             optimizer.step(model.params, grads)
@@ -122,28 +179,40 @@ def main():
 
         val_loss = evaluate(model, ds["enc_ids_val"], ds["dec_ids_val"], args.batch_size, rng)
         val_ppl = float(np.exp(min(val_loss, 20)))
+        rouge = evaluate_rouge(model, ds, args.batch_size)
 
         elapsed = time.time() - epoch_start
-        print(f"epoch {epoch}/{args.epochs} - train_loss={train_loss:.4f} train_ppl={train_ppl:.2f} "
-              f"val_loss={val_loss:.4f} val_ppl={val_ppl:.2f} ({elapsed:.1f}s)")
+        print(f"epoch {epoch}/{args.epochs} - train_loss={train_loss:.4f} "
+              f"val_loss={val_loss:.4f} val_ppl={val_ppl:.2f} | "
+              f"R1={rouge['rouge1']:.3f} R2={rouge['rouge2']:.3f} RL={rouge['rougeL']:.3f} "
+              f"| lr={current_lr:.2e} ({elapsed:.1f}s)")
 
-        if val_loss < best_val_loss - 1e-4:
-            best_val_loss = val_loss
+        # Select on ROUGE-L, not loss: once the model starts overfitting the
+        # two disagree, and ROUGE is what we actually care about.
+        if rouge["rougeL"] > best_rouge_l + 1e-4:
+            best_rouge_l = rouge["rougeL"]
             epochs_without_improvement = 0
             model.save(args.checkpoint)
-            print(f"  -> new best val_loss, saved checkpoint to {args.checkpoint}")
+            print(f"  -> new best ROUGE-L, saved checkpoint to {args.checkpoint}")
         else:
             epochs_without_improvement += 1
-            print(f"  -> no val_loss improvement ({epochs_without_improvement}/{args.patience})")
+            print(f"  -> no ROUGE-L improvement ({epochs_without_improvement}/{args.patience})")
+            # Decay the LR before giving up entirely - smaller steps often
+            # squeeze out more progress once a plateau is hit.
+            if epochs_without_improvement % args.lr_decay_patience == 0:
+                current_lr *= 0.5
+                optimizer.set_lr(current_lr)
+                print(f"  -> lowered learning rate to {current_lr:.2e}")
 
         if epoch % args.sample_every == 0:
             show_samples(model, ds)
 
         if epochs_without_improvement >= args.patience:
-            print(f"Early stopping: no val_loss improvement for {args.patience} epochs in a row.")
+            print(f"Early stopping: no ROUGE-L improvement for {args.patience} epochs in a row.")
             break
 
-    print(f"Best val_loss={best_val_loss:.4f}, checkpoint saved to {args.checkpoint}")
+    print(f"\nBest val ROUGE-L={best_rouge_l:.4f} (lead-1 baseline {baseline['rougeL']:.4f}), "
+          f"checkpoint saved to {args.checkpoint}")
 
 
 if __name__ == "__main__":
