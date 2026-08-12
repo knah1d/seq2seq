@@ -114,19 +114,21 @@ def main():
     parser.add_argument("--dec_max_len", type=int, default=32)
     parser.add_argument("--emb_dim", type=int, default=96)
     parser.add_argument("--hidden_size", type=int, default=128)
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=40)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--clip_norm", type=float, default=5.0)
-    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--weight_decay", type=float, default=1e-5)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--checkpoint", type=str, default="checkpoint.npz")
     parser.add_argument("--sample_every", type=int, default=1)
     parser.add_argument("--patience", type=int, default=6,
-                         help="stop after this many epochs with no val-ROUGE-L improvement")
-    parser.add_argument("--lr_decay_patience", type=int, default=2,
-                         help="halve the LR after this many epochs with no improvement")
+                         help="stop after this many epochs with no val_loss improvement")
+    parser.add_argument("--lr_decay_patience", type=int, default=3,
+                         help="halve the LR after this many epochs with no val_loss improvement")
+    parser.add_argument("--lr_warmup", type=int, default=8,
+                         help="never decay the LR before this epoch")
     args = parser.parse_args()
 
     ds = prepare_dataset(
@@ -152,8 +154,17 @@ def main():
     enc_ids_train, dec_ids_train = ds["enc_ids_train"], ds["dec_ids_train"]
     num_batches = int(np.ceil(len(enc_ids_train) / args.batch_size))
 
+    # Two separate signals, because they are good at different jobs:
+    #   val_loss  - smooth, so it is the reliable trigger for LR decay and
+    #               early stopping.
+    #   ROUGE-L   - what we actually care about, but noisy and near-zero
+    #               early on, so it only decides which checkpoint to keep.
+    # (Driving LR decay off ROUGE-L collapsed the LR to 2.5e-4 by epoch 11
+    # on an earlier run, before the model had learned anything.)
     best_rouge_l = -1.0
-    epochs_without_improvement = 0
+    best_val_loss = float("inf")
+    epochs_no_rouge_gain = 0
+    epochs_no_val_gain = 0
     current_lr = args.lr
 
     for epoch in range(1, args.epochs + 1):
@@ -187,19 +198,27 @@ def main():
               f"R1={rouge['rouge1']:.3f} R2={rouge['rouge2']:.3f} RL={rouge['rougeL']:.3f} "
               f"| lr={current_lr:.2e} ({elapsed:.1f}s)")
 
-        # Select on ROUGE-L, not loss: once the model starts overfitting the
-        # two disagree, and ROUGE is what we actually care about.
+        # Keep the checkpoint with the best ROUGE-L - that is the summary
+        # quality we actually care about.
         if rouge["rougeL"] > best_rouge_l + 1e-4:
             best_rouge_l = rouge["rougeL"]
-            epochs_without_improvement = 0
+            epochs_no_rouge_gain = 0
             model.save(args.checkpoint)
             print(f"  -> new best ROUGE-L, saved checkpoint to {args.checkpoint}")
         else:
-            epochs_without_improvement += 1
-            print(f"  -> no ROUGE-L improvement ({epochs_without_improvement}/{args.patience})")
-            # Decay the LR before giving up entirely - smaller steps often
-            # squeeze out more progress once a plateau is hit.
-            if epochs_without_improvement % args.lr_decay_patience == 0:
+            epochs_no_rouge_gain += 1
+
+        # Drive LR decay and early stopping off val_loss, which is smooth.
+        if val_loss < best_val_loss - 1e-4:
+            best_val_loss = val_loss
+            epochs_no_val_gain = 0
+        else:
+            epochs_no_val_gain += 1
+            print(f"  -> no val_loss improvement ({epochs_no_val_gain}/{args.patience})")
+            # Never decay during the warmup epochs: early loss is still
+            # falling fast and cutting the LR then just stalls training.
+            if (epoch > args.lr_warmup
+                    and epochs_no_val_gain % args.lr_decay_patience == 0):
                 current_lr *= 0.5
                 optimizer.set_lr(current_lr)
                 print(f"  -> lowered learning rate to {current_lr:.2e}")
@@ -207,8 +226,8 @@ def main():
         if epoch % args.sample_every == 0:
             show_samples(model, ds)
 
-        if epochs_without_improvement >= args.patience:
-            print(f"Early stopping: no ROUGE-L improvement for {args.patience} epochs in a row.")
+        if epochs_no_val_gain >= args.patience:
+            print(f"Early stopping: no val_loss improvement for {args.patience} epochs in a row.")
             break
 
     print(f"\nBest val ROUGE-L={best_rouge_l:.4f} (lead-1 baseline {baseline['rougeL']:.4f}), "

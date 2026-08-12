@@ -214,6 +214,7 @@ def prepare_dataset(
     val_fraction=0.1,
     seed=0,
     cache_path=None,
+    augment=False,
 ):
     """Build (or load from cache) the full encoded dataset + vocab.
 
@@ -231,8 +232,9 @@ def prepare_dataset(
             os.path.dirname(os.path.abspath(__file__)), "data_cache.npz"
         )
 
-    # "keysent-aug-noopen" invalidates caches built with the older target schemes.
-    config_tag = f"keysent-aug-noopen-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}"
+    # The tag invalidates caches built with any older target scheme.
+    config_tag = (f"keysent-noopen-aug{int(augment)}-{vocab_size}-{enc_max_len}"
+                  f"-{dec_max_len}-{val_fraction}-{seed}")
 
     if os.path.exists(cache_path):
         cached = np.load(cache_path, allow_pickle=True)
@@ -261,10 +263,21 @@ def prepare_dataset(
     val_raw = raw_pairs[:num_val]
     train_raw = raw_pairs[num_val:]
 
-    # Training set: every reachable summary sentence (~3x more examples).
+    # Training set: ONE target per article by default.
+    #
+    # `augment=True` emits one example per reachable summary sentence, which
+    # triples the example count - but it pairs the *same* encoder input with
+    # several *different* "correct" sentences. Cross-entropy responds to that
+    # contradiction by hedging toward a bland average of all of them, and in
+    # practice training stalls (loss stuck ~5.75, moving 0.025/epoch, with
+    # train and val loss nearly equal - classic underfitting). More examples
+    # are not worth an ambiguous target, so this is off by default.
     train_pairs = []
     for article, summary in train_raw:
-        train_pairs.extend(build_examples(article, summary, enc_max_len))
+        if augment:
+            train_pairs.extend(build_examples(article, summary, enc_max_len))
+        else:
+            train_pairs.append((article, select_key_sentence(article, summary)))
 
     # Validation set: exactly ONE target per article, so ROUGE stays a clean
     # per-article measure rather than being dominated by articles that happen
@@ -272,8 +285,8 @@ def prepare_dataset(
     val_pairs = [(article, select_key_sentence(article, summary))
                  for article, summary in val_raw]
 
-    print(f"  {len(train_raw)} train articles -> {len(train_pairs)} training examples "
-          f"({len(train_pairs)/max(len(train_raw),1):.1f}x via sentence augmentation)")
+    print(f"  {len(train_raw)} train articles -> {len(train_pairs)} training examples"
+          + (" (sentence augmentation ON)" if augment else " (one target per article)"))
 
     stoi, itos = build_vocab(
         [tokens for tokens, _ in train_pairs] + [tokens for _, tokens in train_pairs],
