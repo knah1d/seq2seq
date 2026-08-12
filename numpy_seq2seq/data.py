@@ -90,7 +90,7 @@ def _find_match(window, sentence, match_len):
 
 
 def build_examples(article_tokens, summary_tokens, enc_max_len, match_len=5,
-                   skip_opening=True):
+                   skip_opening=False):
     """Turn ONE (article, summary) pair into SEVERAL training examples.
 
     A BBC summary contains ~8 sentences, each copied verbatim from the
@@ -104,13 +104,8 @@ def build_examples(article_tokens, summary_tokens, enc_max_len, match_len=5,
     examples, a 3x increase, at no cost in data quality since every target
     is still a complete, human-selected, reachable sentence.
 
-    We also *skip the article's own opening sentence*. Without that, the
-    target is usually just the first sentence of the article, and the
-    trivial "print the opening sentence" baseline scores ROUGE-L 0.69 -
-    i.e. the task collapses into copying position 1 and learning nothing
-    about salience. Excluding it drops that baseline to 0.16, so beating it
-    actually demonstrates the model is *selecting* a summary-worthy
-    sentence. (Measured across all 2225 articles.)
+    `skip_opening=True` additionally excludes the article's own opening
+    sentence. See select_key_sentence for why that is OFF by default.
 
     Returns a list of (article_tokens, target_sentence) pairs, ordered by
     where the sentence appears in the article.
@@ -137,20 +132,27 @@ def build_examples(article_tokens, summary_tokens, enc_max_len, match_len=5,
 
 
 def select_key_sentence(article_tokens, summary_tokens, match_len=5,
-                        skip_opening=True):
-    """Pick a single target sentence for one article (used for validation,
-    so ROUGE is measured once per article).
-
-    Same rules as build_examples: the earliest-appearing summary sentence
-    that is not the article's own opening sentence. See build_examples for
-    why both of those choices matter.
+                        skip_opening=False):
+    """Pick the target sentence for one article: the summary sentence that
+    appears EARLIEST in the article.
 
     Why not just truncate the summary? The BBC summaries are *extractive* -
     real article sentences copied verbatim but **reordered** - so a fixed
     truncation grabs text from anywhere in the article (measured: 61% of the
     time the summary's first sentence starts beyond the encoder's input
     window, and only 6% of truncated targets end at a sentence boundary, so
-    the model never learns where to stop).
+    the model never learns where to stop). Taking a whole, earliest-appearing
+    sentence gives a complete target (so <eos> means something) that the
+    encoder can actually see.
+
+    `skip_opening=True` additionally excludes the article's own opening
+    sentence. That makes the task harder and more interesting - the trivial
+    lead-1 baseline drops from ROUGE-L 0.66 to 0.18 - but at this scale
+    (2003 examples, ~3M parameters, no copy/pointer mechanism) the model
+    could not learn it: after 15 epochs it emitted the same generic sentence
+    regardless of the article, and validation ROUGE-L was falling. So it is
+    OFF by default, and the strong lead-1 baseline is reported honestly
+    alongside the model's score instead.
     """
     opening_end = _opening_sentence_end(article_tokens) if skip_opening else -1
 
@@ -209,12 +211,13 @@ def encode(tokens, stoi, max_len, add_sos_eos):
 
 def prepare_dataset(
     vocab_size=8000,
-    enc_max_len=120,
+    enc_max_len=60,
     dec_max_len=32,
     val_fraction=0.1,
     seed=0,
     cache_path=None,
     augment=False,
+    skip_opening=False,
 ):
     """Build (or load from cache) the full encoded dataset + vocab.
 
@@ -233,8 +236,8 @@ def prepare_dataset(
         )
 
     # The tag invalidates caches built with any older target scheme.
-    config_tag = (f"keysent-noopen-aug{int(augment)}-{vocab_size}-{enc_max_len}"
-                  f"-{dec_max_len}-{val_fraction}-{seed}")
+    config_tag = (f"keysent-skip{int(skip_opening)}-aug{int(augment)}-{vocab_size}"
+                  f"-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}")
 
     if os.path.exists(cache_path):
         cached = np.load(cache_path, allow_pickle=True)
@@ -275,14 +278,18 @@ def prepare_dataset(
     train_pairs = []
     for article, summary in train_raw:
         if augment:
-            train_pairs.extend(build_examples(article, summary, enc_max_len))
+            train_pairs.extend(build_examples(article, summary, enc_max_len,
+                                              skip_opening=skip_opening))
         else:
-            train_pairs.append((article, select_key_sentence(article, summary)))
+            train_pairs.append((article,
+                                select_key_sentence(article, summary,
+                                                    skip_opening=skip_opening)))
 
     # Validation set: exactly ONE target per article, so ROUGE stays a clean
     # per-article measure rather than being dominated by articles that happen
     # to have many summary sentences.
-    val_pairs = [(article, select_key_sentence(article, summary))
+    val_pairs = [(article, select_key_sentence(article, summary,
+                                               skip_opening=skip_opening))
                  for article, summary in val_raw]
 
     print(f"  {len(train_raw)} train articles -> {len(train_pairs)} training examples"

@@ -30,3 +30,4 @@ archive/bbc news summary/
 
 # Superseded by git clone/pull inside train.ipynb's Colab bootstrap cell
 numpy_seq2seq_colab.zip
+/numpy_seq2seq/train_log.txt

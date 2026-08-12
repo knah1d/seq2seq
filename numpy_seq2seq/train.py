@@ -110,7 +110,7 @@ def show_samples(model, ds, num_samples=2):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--vocab_size", type=int, default=8000)
-    parser.add_argument("--enc_max_len", type=int, default=120)
+    parser.add_argument("--enc_max_len", type=int, default=60)
     parser.add_argument("--dec_max_len", type=int, default=32)
     parser.add_argument("--emb_dim", type=int, default=96)
     parser.add_argument("--hidden_size", type=int, default=128)

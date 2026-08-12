@@ -1,0 +1,188 @@
+train examples: 2003, val examples: 222
+vocab size: 8000
+lead-1 baseline (emit the article's first sentence): R1=0.230 R2=0.028 RL=0.177
+  -> the model needs to beat this to have learned anything useful.
+
+  epoch 1 batch 20/63 loss=8.0834 (27s elapsed, ~57s left in epoch)
+  epoch 1 batch 40/63 loss=7.4402 (53s elapsed, ~31s left in epoch)
+  epoch 1 batch 60/63 loss=7.1666 (80s elapsed, ~4s left in epoch)
+  epoch 1 batch 63/63 loss=7.1376 (84s elapsed, ~0s left in epoch)
+epoch 1/40 - train_loss=7.1376 val_loss=6.3898 val_ppl=595.73 | R1=0.173 R2=0.000 RL=0.149 | lr=1.00e-03 (88.5s)
+  -> new best ROUGE-L, saved checkpoint to checkpoint.npz
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the . the
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the . the
+  epoch 2 batch 20/63 loss=6.4045 (27s elapsed, ~59s left in epoch)
+  epoch 2 batch 40/63 loss=6.4120 (54s elapsed, ~31s left in epoch)
+  epoch 2 batch 60/63 loss=6.4107 (81s elapsed, ~4s left in epoch)
+  epoch 2 batch 63/63 loss=6.4126 (84s elapsed, ~0s left in epoch)
+epoch 2/40 - train_loss=6.4126 val_loss=6.2877 val_ppl=537.90 | R1=0.159 R2=0.003 RL=0.159 | lr=1.00e-03 (90.3s)
+  -> new best ROUGE-L, saved checkpoint to checkpoint.npz
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the , the , the , the , the , the , the , the .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the , the , the , the , the , the , the , the .
+  epoch 3 batch 20/63 loss=6.2839 (26s elapsed, ~57s left in epoch)
+  epoch 3 batch 40/63 loss=6.2688 (53s elapsed, ~30s left in epoch)
+  epoch 3 batch 60/63 loss=6.2563 (79s elapsed, ~4s left in epoch)
+  epoch 3 batch 63/63 loss=6.2561 (82s elapsed, ~0s left in epoch)
+epoch 3/40 - train_loss=6.2561 val_loss=6.1536 val_ppl=470.40 | R1=0.137 R2=0.003 RL=0.137 | lr=1.00e-03 (88.6s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the , the , the , the , the , the , the , the , the , the , the .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the , the , the , the , the , the , the , the , the , the , the .
+  epoch 4 batch 20/63 loss=6.0996 (27s elapsed, ~57s left in epoch)
+  epoch 4 batch 40/63 loss=6.1049 (53s elapsed, ~31s left in epoch)
+  epoch 4 batch 60/63 loss=6.1052 (80s elapsed, ~4s left in epoch)
+  epoch 4 batch 63/63 loss=6.1056 (83s elapsed, ~0s left in epoch)
+epoch 4/40 - train_loss=6.1056 val_loss=6.0584 val_ppl=427.68 | R1=0.108 R2=0.000 RL=0.108 | lr=1.00e-03 (90.2s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the a the a the a the a the a the a the a the a the a the a the a the a the a the .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the a the a the a the a the a the a the a the a the a the a the a the a the .
+  epoch 5 batch 20/63 loss=5.9571 (26s elapsed, ~56s left in epoch)
+  epoch 5 batch 40/63 loss=5.9727 (52s elapsed, ~30s left in epoch)
+  epoch 5 batch 60/63 loss=5.9714 (79s elapsed, ~4s left in epoch)
+  epoch 5 batch 63/63 loss=5.9737 (82s elapsed, ~0s left in epoch)
+epoch 5/40 - train_loss=5.9737 val_loss=5.9890 val_ppl=399.03 | R1=0.109 R2=0.001 RL=0.106 | lr=1.00e-03 (89.6s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the said the a the be the be the be the be the be the be the be the be the be the be the be the be the be the .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the said the a the be the be the be the be the be the be the be the be the be the be the be the be the be .
+  epoch 6 batch 20/63 loss=5.8958 (27s elapsed, ~59s left in epoch)
+  epoch 6 batch 40/63 loss=5.8830 (55s elapsed, ~31s left in epoch)
+  epoch 6 batch 60/63 loss=5.8700 (83s elapsed, ~4s left in epoch)
+  epoch 6 batch 63/63 loss=5.8689 (87s elapsed, ~0s left in epoch)
+epoch 6/40 - train_loss=5.8689 val_loss=5.9411 val_ppl=380.35 | R1=0.052 R2=0.001 RL=0.051 | lr=1.00e-03 (94.4s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the new the be the be the be the be the be the be the be the be the be the be the be the be the be the be the be
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the new the be the be the be the be the be the be the be the be the be the be the be the be the be the be the be
+  epoch 7 batch 20/63 loss=5.7587 (26s elapsed, ~57s left in epoch)
+  epoch 7 batch 40/63 loss=5.7608 (53s elapsed, ~30s left in epoch)
+  epoch 7 batch 60/63 loss=5.7792 (80s elapsed, ~4s left in epoch)
+  epoch 7 batch 63/63 loss=5.7806 (84s elapsed, ~0s left in epoch)
+epoch 7/40 - train_loss=5.7806 val_loss=5.9030 val_ppl=366.13 | R1=0.136 R2=0.005 RL=0.128 | lr=1.00e-03 (91.2s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the new year , the new year , the be the be a be a be a be a be a be a be a be the be the year .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the new year , the new year , the be the be a be a be a be a be a be a be a be the be the year .
+  epoch 8 batch 20/63 loss=5.6705 (27s elapsed, ~57s left in epoch)
+  epoch 8 batch 40/63 loss=5.6953 (53s elapsed, ~31s left in epoch)
+  epoch 8 batch 60/63 loss=5.7010 (80s elapsed, ~4s left in epoch)
+  epoch 8 batch 63/63 loss=5.6994 (83s elapsed, ~0s left in epoch)
+epoch 8/40 - train_loss=5.6994 val_loss=5.8667 val_ppl=353.07 | R1=0.119 R2=0.004 RL=0.115 | lr=1.00e-03 (90.3s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the us , the be the be the be the be the be the be the be the be the be the be the be .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the us , the be the be the be the be the be the be the be the be the be the be the be .
+  epoch 9 batch 20/63 loss=5.5870 (27s elapsed, ~57s left in epoch)
+  epoch 9 batch 40/63 loss=5.6065 (54s elapsed, ~31s left in epoch)
+  epoch 9 batch 60/63 loss=5.6226 (81s elapsed, ~4s left in epoch)
+  epoch 9 batch 63/63 loss=5.6254 (84s elapsed, ~0s left in epoch)
+epoch 9/40 - train_loss=5.6254 val_loss=5.8390 val_ppl=343.44 | R1=0.158 R2=0.006 RL=0.149 | lr=1.00e-03 (90.7s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the us , the first year , the be the be a be a be a be a be the be the year .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the us , the first year , the be the be a be a be a be a be the be the year .
+  epoch 10 batch 20/63 loss=5.5467 (27s elapsed, ~58s left in epoch)
+  epoch 10 batch 40/63 loss=5.5666 (53s elapsed, ~31s left in epoch)
+  epoch 10 batch 60/63 loss=5.5583 (80s elapsed, ~4s left in epoch)
+  epoch 10 batch 63/63 loss=5.5558 (83s elapsed, ~0s left in epoch)
+epoch 10/40 - train_loss=5.5558 val_loss=5.8030 val_ppl=331.28 | R1=0.158 R2=0.006 RL=0.146 | lr=1.00e-03 (90.1s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the us , the first year , the be a be a be a be a be a be a first year .
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the blair , the first year , the be a be a be a be a be a be a year , the first year .
+  epoch 11 batch 20/63 loss=5.4456 (27s elapsed, ~57s left in epoch)
+  epoch 11 batch 40/63 loss=5.4637 (53s elapsed, ~31s left in epoch)
+  epoch 11 batch 60/63 loss=5.4717 (80s elapsed, ~4s left in epoch)
+  epoch 11 batch 63/63 loss=5.4761 (83s elapsed, ~0s left in epoch)
+epoch 11/40 - train_loss=5.4761 val_loss=5.7832 val_ppl=324.79 | R1=0.107 R2=0.006 RL=0.102 | lr=1.00e-03 (90.8s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the blair , the first year , the first year , the first year , the first year , the first year , the first year , the first year , the
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the blair , the first year , the first year , the be a be a be of the first year , the first year , the first year , the first
+  epoch 12 batch 20/63 loss=5.3804 (27s elapsed, ~58s left in epoch)
+  epoch 12 batch 40/63 loss=5.3925 (53s elapsed, ~31s left in epoch)
+  epoch 12 batch 60/63 loss=5.4115 (80s elapsed, ~4s left in epoch)
+  epoch 12 batch 63/63 loss=5.4084 (84s elapsed, ~0s left in epoch)
+epoch 12/40 - train_loss=5.4084 val_loss=5.7579 val_ppl=316.69 | R1=0.094 R2=0.008 RL=0.090 | lr=1.00e-03 (90.8s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the us of the first year , the first year , the new year , the new year , the new year , the new year , the first year , the
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the blair , the first year , the first year , the new year , the new year , the new year , the new year , the first year , the
+  epoch 13 batch 20/63 loss=5.3362 (27s elapsed, ~58s left in epoch)
+  epoch 13 batch 40/63 loss=5.3265 (54s elapsed, ~31s left in epoch)
+  epoch 13 batch 60/63 loss=5.3385 (80s elapsed, ~4s left in epoch)
+  epoch 13 batch 63/63 loss=5.3412 (84s elapsed, ~0s left in epoch)
+epoch 13/40 - train_loss=5.3412 val_loss=5.7364 val_ppl=309.94 | R1=0.098 R2=0.008 RL=0.091 | lr=1.00e-03 (91.5s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the us of the first year , the first year , the first year , the first year , the first year , the first year , the first year , the
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the us of the first year , who was the first year , the first year , the first year , the first year , the first year , the first year
+  epoch 14 batch 20/63 loss=5.2835 (27s elapsed, ~57s left in epoch)
+  epoch 14 batch 40/63 loss=5.2658 (53s elapsed, ~31s left in epoch)
+  epoch 14 batch 60/63 loss=5.2772 (80s elapsed, ~4s left in epoch)
+  epoch 14 batch 63/63 loss=5.2752 (83s elapsed, ~0s left in epoch)
+epoch 14/40 - train_loss=5.2752 val_loss=5.7194 val_ppl=304.72 | R1=0.107 R2=0.008 RL=0.098 | lr=1.00e-03 (90.5s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the blair , who was the first year , the first year , the first year , the first year , the first year , the first year , the first year
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the blair said the first year , who was a first year , the first year , the first year , the first year , the first year , the first year
+  epoch 15 batch 20/63 loss=5.1955 (27s elapsed, ~57s left in epoch)
+  epoch 15 batch 40/63 loss=5.1996 (53s elapsed, ~31s left in epoch)
+  epoch 15 batch 60/63 loss=5.2110 (80s elapsed, ~4s left in epoch)
+  epoch 15 batch 63/63 loss=5.2125 (84s elapsed, ~0s left in epoch)
+epoch 15/40 - train_loss=5.2125 val_loss=5.7051 val_ppl=300.39 | R1=0.106 R2=0.010 RL=0.099 | lr=1.00e-03 (91.6s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the us s us , said the first year , the first year , the new year , the new year , the us , said the us , said the us
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the blair , who was the first year , the new year , the new year , the new year , the us , the us of the us of the us
+  epoch 16 batch 20/63 loss=5.1106 (28s elapsed, ~61s left in epoch)
+  epoch 16 batch 40/63 loss=5.1248 (56s elapsed, ~32s left in epoch)
+  epoch 16 batch 60/63 loss=5.1460 (84s elapsed, ~4s left in epoch)
+  epoch 16 batch 63/63 loss=5.1540 (87s elapsed, ~0s left in epoch)
+epoch 16/40 - train_loss=5.1540 val_loss=5.6923 val_ppl=296.58 | R1=0.114 R2=0.012 RL=0.105 | lr=1.00e-03 (94.7s)
+  [val #0] article: tate <unk> boss <unk> top award tate <unk> s chief executive has been named european <unk> of the year by a leading business magazine . <unk> ferguson was awarded the title by us publication <unk> for...
+            reference : <unk> ferguson was awarded the title by us publication <unk> for returning one of the uk s <unk> manufacturers to the country s top 100 companies .
+            prediction: the us s new year , who was the first year , the first year , the new year , the first year , the us , said the us , said
+  [val #1] article: halo 2 sells five million copies microsoft is celebrating <unk> sales of its xbox sci fi shooter , halo 2 . the game has sold more than five million copies worldwide since it went on sale in mid novem...
+            reference : the game has sold more than five million copies worldwide since it went on sale in mid november , the company said .
+            prediction: the blair said the first year , the first year , the new year , the new year , the new year , the us , said the us of the us
+  epoch 17 batch 20/63 loss=5.0710 (27s elapsed, ~59s left in epoch)
+  epoch 17 batch 40/63 loss=5.0838 (55s elapsed, ~32s left in epoch)
+  epoch 17 batch 60/63 loss=5.0942 (83s elapsed, ~4s left in epoch)
+  epoch 17 batch 63/63 loss=5.0940 (87s elapsed, ~0s left in epoch)
+epoch 17/40 - train_loss=5.0940 val_loss=5.6804 val_ppl=293.07 | R1=0.123 R2=0.010 RL=0.115 | lr=1.00e-03 (95.8s)
