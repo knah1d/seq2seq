@@ -68,7 +68,29 @@ def split_sentences(tokens):
     return sentences
 
 
-def build_examples(article_tokens, summary_tokens, enc_max_len, match_len=5):
+def _opening_sentence_end(article_tokens):
+    """Index of the '.' that ends the article's opening sentence.
+
+    A BBC article file starts with a headline (no full stop) run straight
+    into the first body sentence, so the first '.' terminates both.
+    """
+    try:
+        return article_tokens.index(".")
+    except ValueError:
+        return 0
+
+
+def _find_match(window, sentence, match_len):
+    """Position where `sentence` starts inside `window`, or None."""
+    key = sentence[:match_len]
+    for i in range(max(0, len(window) - match_len)):
+        if window[i:i + match_len] == key:
+            return i
+    return None
+
+
+def build_examples(article_tokens, summary_tokens, enc_max_len, match_len=5,
+                   skip_opening=True):
     """Turn ONE (article, summary) pair into SEVERAL training examples.
 
     A BBC summary contains ~8 sentences, each copied verbatim from the
@@ -82,30 +104,46 @@ def build_examples(article_tokens, summary_tokens, enc_max_len, match_len=5):
     examples, a 3x increase, at no cost in data quality since every target
     is still a complete, human-selected, reachable sentence.
 
+    We also *skip the article's own opening sentence*. Without that, the
+    target is usually just the first sentence of the article, and the
+    trivial "print the opening sentence" baseline scores ROUGE-L 0.69 -
+    i.e. the task collapses into copying position 1 and learning nothing
+    about salience. Excluding it drops that baseline to 0.16, so beating it
+    actually demonstrates the model is *selecting* a summary-worthy
+    sentence. (Measured across all 2225 articles.)
+
     Returns a list of (article_tokens, target_sentence) pairs, ordered by
     where the sentence appears in the article.
     """
     window = article_tokens[:enc_max_len]
+    opening_end = _opening_sentence_end(article_tokens) if skip_opening else -1
+
     found = []
     for sentence in split_sentences(summary_tokens):
         if len(sentence) < 4:
             continue
-        key = sentence[:match_len]
-        for i in range(max(0, len(window) - match_len)):
-            if window[i:i + match_len] == key:
-                found.append((i, sentence))
-                break
+        position = _find_match(window, sentence, match_len)
+        if position is None or position <= opening_end:
+            continue
+        found.append((position, sentence))
+
     if not found:
-        # No sentence lands in the window - fall back to the single best
+        # Nothing qualifies (~3% of articles) - fall back to the single best
         # target so the article still contributes one example.
-        return [(article_tokens, select_key_sentence(article_tokens, summary_tokens, match_len))]
+        return [(article_tokens,
+                 select_key_sentence(article_tokens, summary_tokens, match_len))]
     found.sort(key=lambda pair: pair[0])
     return [(article_tokens, sentence) for _, sentence in found]
 
 
-def select_key_sentence(article_tokens, summary_tokens, match_len=5):
-    """Pick the training target: the summary sentence that appears EARLIEST
-    in the article.
+def select_key_sentence(article_tokens, summary_tokens, match_len=5,
+                        skip_opening=True):
+    """Pick a single target sentence for one article (used for validation,
+    so ROUGE is measured once per article).
+
+    Same rules as build_examples: the earliest-appearing summary sentence
+    that is not the article's own opening sentence. See build_examples for
+    why both of those choices matter.
 
     Why not just truncate the summary? The BBC summaries are *extractive* -
     real article sentences copied verbatim but **reordered** - so a fixed
@@ -113,29 +151,33 @@ def select_key_sentence(article_tokens, summary_tokens, match_len=5):
     time the summary's first sentence starts beyond the encoder's input
     window, and only 6% of truncated targets end at a sentence boundary, so
     the model never learns where to stop).
-
-    Choosing the earliest-appearing summary sentence fixes both problems at
-    once: the target is a *complete* sentence (so <eos> means something) and
-    it sits near the start of the article (94% within 60 tokens, 99% within
-    120), so it is actually reachable from what the encoder can see.
     """
+    opening_end = _opening_sentence_end(article_tokens) if skip_opening else -1
+
     best_pos, best_sentence = None, None
+    fallback = None
     for sentence in split_sentences(summary_tokens):
         if len(sentence) < 4:
             continue
-        key = sentence[:match_len]
-        for i in range(max(0, len(article_tokens) - match_len)):
-            if article_tokens[i:i + match_len] == key:
-                if best_pos is None or i < best_pos:
-                    best_pos, best_sentence = i, sentence
-                break
-    if best_sentence is None:
-        # No verbatim match (rare) - fall back to the first real sentence.
-        for sentence in split_sentences(summary_tokens):
-            if len(sentence) >= 4:
-                return sentence
-        return summary_tokens
-    return best_sentence
+        position = _find_match(article_tokens, sentence, match_len)
+        if position is None:
+            continue
+        if fallback is None or position < fallback[0]:
+            fallback = (position, sentence)
+        if position <= opening_end:
+            continue
+        if best_pos is None or position < best_pos:
+            best_pos, best_sentence = position, sentence
+
+    if best_sentence is not None:
+        return best_sentence
+    if fallback is not None:
+        # Only the opening sentence matched - better than nothing.
+        return fallback[1]
+    for sentence in split_sentences(summary_tokens):
+        if len(sentence) >= 4:
+            return sentence
+    return summary_tokens
 
 
 def build_vocab(token_lists, vocab_size):
@@ -189,8 +231,8 @@ def prepare_dataset(
             os.path.dirname(os.path.abspath(__file__)), "data_cache.npz"
         )
 
-    # "keysent-aug" invalidates caches built with the older target schemes.
-    config_tag = f"keysent-aug-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}"
+    # "keysent-aug-noopen" invalidates caches built with the older target schemes.
+    config_tag = f"keysent-aug-noopen-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}"
 
     if os.path.exists(cache_path):
         cached = np.load(cache_path, allow_pickle=True)
