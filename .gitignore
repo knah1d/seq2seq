@@ -10,8 +10,13 @@ venv/
 env/
 
 # Data & model artifacts
+# NOTE: archive/BBC News Summary/ (the dataset actually used by data.py) IS
+# tracked on purpose, so `git clone`/`git pull` in Google Colab brings the
+# dataset with it - no manual upload step needed. Only the raw downloaded
+# zip, the redundant duplicate-case copy of the same data, and
+# generated/regenerable artifacts are ignored.
 archive.zip
-archive/
+archive/bbc news summary/
 *.npz
 *.npy
 *.pt
@@ -22,3 +27,6 @@ archive/
 .DS_Store
 
 .claude
+
+# Superseded by git clone/pull inside train.ipynb's Colab bootstrap cell
+numpy_seq2seq_colab.zip

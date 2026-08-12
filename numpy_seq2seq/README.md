@@ -132,6 +132,17 @@ python3 -m venv .venv && .venv/bin/pip install numpy   # one-time setup
 .venv/bin/python numpy_seq2seq/generate.py --article_file some_article.txt
 ```
 
+### Running training in Google Colab instead
+
+The dataset is tracked in this repo (see the note in `.gitignore`) specifically
+so Colab can get everything in one step. Open `numpy_seq2seq/train.ipynb` in
+Colab (upload it, or File → Open notebook → GitHub → this repo) and run the
+first code cell — it detects Colab, `git clone`s this repo (or `git pull`s if
+you re-run it later in the same session), and `cd`s into `numpy_seq2seq/`
+automatically. Everything after that cell runs identically to local. A GPU
+runtime gives no speedup here (no GPU calls anywhere in this NumPy code) —
+CPU runtime is fine.
+
 ## Defaults and why
 
 - **Vocabulary**: 8000 most frequent words (rest map to `<unk>`) — keeps the
