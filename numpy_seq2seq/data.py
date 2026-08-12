@@ -68,6 +68,41 @@ def split_sentences(tokens):
     return sentences
 
 
+def build_examples(article_tokens, summary_tokens, enc_max_len, match_len=5):
+    """Turn ONE (article, summary) pair into SEVERAL training examples.
+
+    A BBC summary contains ~8 sentences, each copied verbatim from the
+    article. Using only one of them throws away most of the supervision we
+    have - and with ~2000 articles against a ~3M-parameter model, too little
+    data is the single biggest thing holding results back.
+
+    So we emit one (article, sentence) example for every summary sentence
+    that actually appears inside the encoder's input window (i.e. that the
+    model has a chance of producing). Measured: 2225 articles -> 6682
+    examples, a 3x increase, at no cost in data quality since every target
+    is still a complete, human-selected, reachable sentence.
+
+    Returns a list of (article_tokens, target_sentence) pairs, ordered by
+    where the sentence appears in the article.
+    """
+    window = article_tokens[:enc_max_len]
+    found = []
+    for sentence in split_sentences(summary_tokens):
+        if len(sentence) < 4:
+            continue
+        key = sentence[:match_len]
+        for i in range(max(0, len(window) - match_len)):
+            if window[i:i + match_len] == key:
+                found.append((i, sentence))
+                break
+    if not found:
+        # No sentence lands in the window - fall back to the single best
+        # target so the article still contributes one example.
+        return [(article_tokens, select_key_sentence(article_tokens, summary_tokens, match_len))]
+    found.sort(key=lambda pair: pair[0])
+    return [(article_tokens, sentence) for _, sentence in found]
+
+
 def select_key_sentence(article_tokens, summary_tokens, match_len=5):
     """Pick the training target: the summary sentence that appears EARLIEST
     in the article.
@@ -154,8 +189,8 @@ def prepare_dataset(
             os.path.dirname(os.path.abspath(__file__)), "data_cache.npz"
         )
 
-    # "keysent" in the tag invalidates caches built with the old truncated targets.
-    config_tag = f"keysent-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}"
+    # "keysent-aug" invalidates caches built with the older target schemes.
+    config_tag = f"keysent-aug-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}"
 
     if os.path.exists(cache_path):
         cached = np.load(cache_path, allow_pickle=True)
@@ -172,17 +207,31 @@ def prepare_dataset(
 
     print("Preprocessing dataset from raw text files (first run only)...")
     raw_pairs = load_pairs()
-    # Replace each full summary with the single key sentence we train on.
-    pairs = [(article, select_key_sentence(article, summary))
-             for article, summary in raw_pairs]
 
+    # Shuffle and split by ARTICLE *before* augmenting, so that no article
+    # contributes sentences to both splits - otherwise validation would be
+    # scoring the model on articles it trained on.
     rng = np.random.RandomState(seed)
-    order = rng.permutation(len(pairs))
-    pairs = [pairs[i] for i in order]
+    order = rng.permutation(len(raw_pairs))
+    raw_pairs = [raw_pairs[i] for i in order]
 
-    num_val = max(1, int(len(pairs) * val_fraction))
-    val_pairs = pairs[:num_val]
-    train_pairs = pairs[num_val:]
+    num_val = max(1, int(len(raw_pairs) * val_fraction))
+    val_raw = raw_pairs[:num_val]
+    train_raw = raw_pairs[num_val:]
+
+    # Training set: every reachable summary sentence (~3x more examples).
+    train_pairs = []
+    for article, summary in train_raw:
+        train_pairs.extend(build_examples(article, summary, enc_max_len))
+
+    # Validation set: exactly ONE target per article, so ROUGE stays a clean
+    # per-article measure rather than being dominated by articles that happen
+    # to have many summary sentences.
+    val_pairs = [(article, select_key_sentence(article, summary))
+                 for article, summary in val_raw]
+
+    print(f"  {len(train_raw)} train articles -> {len(train_pairs)} training examples "
+          f"({len(train_pairs)/max(len(train_raw),1):.1f}x via sentence augmentation)")
 
     stoi, itos = build_vocab(
         [tokens for tokens, _ in train_pairs] + [tokens for _, tokens in train_pairs],

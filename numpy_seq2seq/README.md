@@ -9,7 +9,7 @@ code, so nothing is hidden behind a framework.
 
 Summarization is a sequence-to-sequence problem: read a long article
 (encoder), then generate a short summary one word at a time (decoder).
-A single fixed-size vector can't hold everything about a 60-word article
+A single fixed-size vector can't hold everything about a 120-word article
 before you've even generated the first word — that's the bottleneck
 Bahdanau attention removes: at every decoding step, the decoder looks back
 at *all* encoder states and learns which words matter most right now.
@@ -108,29 +108,110 @@ numerical derivative matches the analytic gradient from `backward()` to
 .venv/bin/python numpy_seq2seq/gradcheck.py
 ```
 
+## What we actually train on (the most important design decision)
+
+The obvious approach — "input = first N words of the article, target = first
+M words of the summary" — **cannot work on this dataset**, and measuring why
+was the single biggest improvement to this project.
+
+BBC "summaries" are **extractive**: they are real article sentences copied
+verbatim, but **reordered**. So a fixed truncation of the summary grabs text
+from anywhere in the article. Measured across all 2225 pairs:
+
+| Measurement (with the naive 60-in / 20-out setup) | Value | Consequence |
+|---|---|---|
+| Target content-words present in the input window | **52.7%** | The model is asked to generate words it cannot see |
+| Summaries whose first sentence starts *after* token 60 | **61.3%** | The answer is usually outside the input entirely |
+| Targets that end at a sentence boundary | **6.1%** | `<eos>` lands at a random mid-sentence point, so the model **never learns when to stop** → run-on repetition |
+
+That explains the classic failure output — `"the <unk> , said the <unk> ,
+said the <unk> ..."`. It wasn't a bug in the math (`gradcheck.py` passed
+throughout); the task itself was unsolvable as posed.
+
+**The fix** (`build_examples` / `select_key_sentence` in `data.py`): for each
+article, emit one training example per summary sentence that actually
+appears **inside** the encoder's input window. Every target is then:
+
+- a **complete sentence** ending in `.`, so `<eos>` means something and the
+  model learns to stop;
+- **reachable** — 94% of key sentences start within the first 60 tokens and
+  99.3% within 120 (hence `enc_max_len=120`);
+- **still genuine extractive summarization** — a sentence a human summarizer
+  picked out as salient.
+
+It also yields **~3× more training data** (2,003 articles → ~6,000 examples)
+from the same dataset, which matters a lot: the model has ~3M parameters, so
+data volume is the main thing limiting it. The train/val split happens at the
+**article** level *before* augmenting, so no article's sentences leak across
+the split, and validation keeps exactly one target per article so ROUGE stays
+a clean per-article measure.
+
+## Fighting overfitting
+
+~3M parameters against ~6k training examples memorizes readily, so:
+
+- **Dropout** (`dropout=0.3`, `layers.py`) on the encoder embeddings, decoder
+  embeddings, and the output-layer input. Inverted dropout: scale survivors
+  by `1/(1-p)` at train time, identity at eval time.
+- **Weight decay** (`1e-5`, `optim.py`) on matrices but not biases —
+  shrinking a bias just shifts the function without reducing capacity.
+- **LR decay on plateau**: halve the learning rate after 2 epochs with no
+  improvement, before giving up entirely.
+- **Early stopping on validation ROUGE-L**, not loss (see below).
+
+## Measuring it: ROUGE, and an honest baseline
+
+`rouge.py` implements ROUGE-1/2/L (word, word-pair, and longest-common-
+subsequence overlap F1) in ~40 lines of dependency-free Python.
+
+Loss and summary quality **diverge** once a model overfits — loss measures
+per-token confidence, ROUGE measures whether the finished summary overlaps
+the reference. So the checkpoint is saved on **best validation ROUGE-L**.
+
+`train.py` also prints a **lead-1 baseline** (just emit the article's first
+sentence) before training starts. If the model can't beat that, it hasn't
+learned anything useful. Strong lead baselines on news summarization are a
+well-known real result, so keeping this number visible is honest science
+rather than a weakness to hide.
+
 ## Files
 
 | File | Purpose |
 |---|---|
-| `data.py` | Reads `archive/BBC News Summary/`, tokenizes, builds a frequency-based vocabulary, encodes to fixed-length padded id arrays, caches to `data_cache.npz`. |
-| `layers.py` | Embedding, LSTM cell, Bahdanau attention, dense layer, softmax+cross-entropy — each with forward *and* backward. |
+| `data.py` | Reads `archive/BBC News Summary/`, tokenizes, selects the **key-sentence targets** described above, builds the vocabulary, encodes to padded id arrays, caches to `data_cache.npz`. |
+| `rouge.py` | ROUGE-1/2/L in pure Python (no dependencies). |
+| `layers.py` | Embedding, dropout, LSTM cell, Bahdanau attention, dense layer, softmax+cross-entropy — each with forward *and* backward. |
 | `model.py` | `Seq2SeqAttention`: wires the layers into encoder → bridge → attention → decoder; `forward`/`backward` for training, `greedy_decode` for inference. |
-| `optim.py` | Adam optimizer + gradient-norm clipping, over the raw parameter dict. |
-| `train.py` | Training loop: batches the data, calls forward/backward/optimizer step, prints loss/perplexity and sample summaries each epoch, saves a checkpoint. |
+| `optim.py` | Adam optimizer + weight decay + gradient-norm clipping, over the raw parameter dict. |
+| `train.py` | Training loop: batches the data, calls forward/backward/optimizer step, reports train/val loss and validation ROUGE each epoch, decays the LR on plateau, early-stops, and saves the best-ROUGE-L checkpoint. |
+| `train.ipynb` | The training loop as a notebook (runs locally or in Colab — see below), with train/val loss and ROUGE-L plots. |
 | `generate.py` | Loads a checkpoint, summarizes a validation example or your own `.txt` file, prints the predicted vs. reference summary and an attention heatmap. |
 | `gradcheck.py` | Numerical vs. analytic gradient check (correctness proof for the hand-written backward pass). |
+| `app.py` | Streamlit UI: pick or paste an article, see the generated summary and an attention heatmap. |
 
 ## How to run
 
-```
-python3 -m venv .venv && .venv/bin/pip install numpy   # one-time setup
+All commands below are run from inside `numpy_seq2seq/`.
 
-.venv/bin/python numpy_seq2seq/gradcheck.py             # verify backward pass is correct
-.venv/bin/python numpy_seq2seq/train.py --epochs 60     # train (~40s/epoch on CPU); stops early once
-                                                          # validation loss stops improving (--patience, default 5)
-.venv/bin/python numpy_seq2seq/generate.py --val_index 3
-.venv/bin/python numpy_seq2seq/generate.py --article_file some_article.txt
 ```
+python3 -m venv ../.venv && ../.venv/bin/pip install numpy   # one-time setup
+                                                             # (streamlit + matplotlib only for app.py / the notebook)
+
+../.venv/bin/python gradcheck.py             # verify the backward pass (expect PASS, ~1e-5)
+../.venv/bin/python gradcheck.py --dropout   # same, but also checks the dropout backward
+../.venv/bin/python rouge.py                 # self-test of the ROUGE implementation
+
+../.venv/bin/python train.py                 # train with the defaults below; early-stops on val ROUGE-L
+
+../.venv/bin/python generate.py --val_index 3
+../.venv/bin/python generate.py --article_file some_article.txt
+../.venv/bin/streamlit run app.py            # optional web UI
+```
+
+Useful training flags: `--epochs`, `--dropout`, `--weight_decay`, `--lr`,
+`--patience`, `--lr_decay_patience`, `--enc_max_len`, `--dec_max_len`.
+Changing `--vocab_size`/`--enc_max_len`/`--dec_max_len` automatically
+invalidates `data_cache.npz` and re-preprocesses.
 
 ### Running training in Google Colab instead
 
@@ -147,38 +228,55 @@ CPU runtime is fine.
 
 - **Vocabulary**: 8000 most frequent words (rest map to `<unk>`) — keeps the
   output-layer matrix (`hidden*2 x vocab`) small enough to train fast.
-- **Sequence lengths**: articles truncated to 60 tokens, summaries to 20 —
-  pure-Python-loop BPTT over long sequences is slow; short sequences keep
-  each epoch under a minute while still exercising every part of the model.
-- **Hidden size 128 / embedding 96**: small enough to train quickly on CPU,
-  large enough to actually learn (loss drops from ~9.0 at init towards
-  ~3-4 after a dozen epochs on this dataset).
+  Dropping to 5000 would nearly double the target `<unk>` rate (3.8% → 7.4%).
+- **`enc_max_len=120`**: the smallest window that makes 99.3% of key-sentence
+  targets reachable (60 only reaches 94%, and costs the model a lot of the
+  content words it needs).
+- **`dec_max_len=32`**: covers the 90th-percentile key-sentence length (29
+  tokens) plus `<sos>`/`<eos>`.
+- **Hidden size 128 / embedding 96**: small enough to train on CPU, large
+  enough to learn. Note this is still ~3M parameters (the `hidden*2 × vocab`
+  output layer dominates) against ~6k examples — hence the regularization.
+- **Dropout 0.3, weight decay 1e-5**: see "Fighting overfitting" above.
 - **Single-layer, unidirectional LSTM, greedy decoding (no beam search)**:
   deliberately simple — the point of this project is to understand every
   equation, not to match a production summarizer's quality.
+- **Decoding guards**: `<pad>`/`<sos>`/`<unk>` logits are masked to `-inf` so
+  they can never be emitted, and an immediate word repeat falls back to the
+  second-best token. Cheap fixes for the most visible greedy-decoding
+  artifacts.
 
 ## Expected results / limitations
 
-This is a small model trained briefly on ~2000 examples with plain NumPy —
-it will **not** produce publication-quality summaries. What you should
-expect and can show your instructor:
-- Training loss/perplexity steadily decreasing over epochs.
-- Generated summaries moving from repeated generic words (early epochs) to
-  fragments that reuse relevant article vocabulary (later epochs).
-- Attention weights that concentrate on topically relevant words rather
-  than being uniform — this is the part worth walking through in
-  `generate.py`'s printed heatmap, since it's the clearest visual evidence
-  the attention mechanism is doing something meaningful.
+Be realistic about the ceiling here: this is a ~3M-parameter model trained on
+~6k examples with plain NumPy on a CPU. Production summarizers train on
+100k–1M+ pairs (CNN/DailyMail is 287k). It will **not** produce
+publication-quality summaries.
 
-**On overfitting:** with only ~2000 training examples, training loss will
-keep dropping far past the point where the model is actually still
-generalizing — it starts memorizing training-set phrases instead. You'll
-see this as: validation-set summaries becoming fluent-sounding but *topically
-wrong* for the specific article, and attention collapsing onto the same 1-2
-words for every generated token instead of tracking different words. This is
-exactly why `train.py` tracks a separate **validation loss** each epoch and
-early-stops (`--patience`, default 5 epochs with no improvement) — the
-checkpoint it saves is always the one with the best validation loss, not
-just whatever the last epoch happened to be. If you want to see the
-overfitting happen anyway (it's a good thing to show an instructor), just
-raise `--patience` to a big number so it keeps training past the best point.
+What you *should* see, and what is worth showing an instructor:
+
+- **Training loss falling and validation ROUGE-L rising** over the first
+  epochs, then plateauing — with early stopping picking the best point.
+- **Complete sentences that stop on their own**, containing no `<unk>` and
+  reusing article vocabulary. (Compare against the "before" failure mode
+  documented above — that contrast *is* the story of this project.)
+- **Attention that tracks different words across decoder steps** rather than
+  collapsing onto one or two. `generate.py`'s heatmap is the clearest visual
+  evidence the attention mechanism is doing real work.
+- **A ROUGE-L number next to the lead-1 baseline.** Beating a lead baseline
+  on news is genuinely hard — if the model lands near it, say so plainly.
+  That is a real, well-documented result in the summarization literature,
+  not a failed project.
+
+**On overfitting:** training loss will keep dropping long past the point of
+generalizing. Symptoms: validation summaries become fluent-sounding but
+*topically wrong* for the specific article, and attention collapses onto the
+same one or two words every step. That is why the checkpoint is chosen on
+validation ROUGE-L and training early-stops. If you want to *demonstrate*
+overfitting to an instructor, set `--patience 999` and watch train loss and
+validation ROUGE-L diverge.
+
+**The honest biggest lever, if you want better numbers:** more data, not more
+tuning. The sentence-level augmentation already extracts ~3× more supervision
+from this corpus; beyond that you'd need a larger dataset, which pure-NumPy
+CPU training makes impractical.
