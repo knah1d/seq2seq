@@ -198,10 +198,19 @@ def build_vocab(token_lists, vocab_size):
 
 def encode(tokens, stoi, max_len, add_sos_eos):
     """Convert tokens -> fixed-length id array (truncate + pad with PAD id).
-    If add_sos_eos, wraps as <sos> tok1 tok2 ... <eos> before truncating."""
+    If add_sos_eos, wraps as <sos> tok1 tok2 ... <eos>.
+
+    <eos> is appended ONLY when the whole sequence fit. Appending it after a
+    truncation would teach the model to stop in the middle of a sentence -
+    the exact failure that made the first version of this project emit
+    endless run-on text. Truncated targets simply end in padding, which the
+    loss masks out, so they contribute no stop-signal either way.
+    """
     ids = [stoi.get(t, stoi[UNK]) for t in tokens]
     if add_sos_eos:
-        ids = [stoi[SOS]] + ids[: max_len - 2] + [stoi[EOS]]
+        body = ids[: max_len - 2]
+        fitted = len(ids) <= max_len - 2
+        ids = [stoi[SOS]] + body + ([stoi[EOS]] if fitted else [])
     else:
         ids = ids[:max_len]
     pad_id = stoi[PAD]
@@ -209,35 +218,79 @@ def encode(tokens, stoi, max_len, add_sos_eos):
     return ids[:max_len]
 
 
+def load_headline_pairs():
+    """Read (article_body_tokens, headline_tokens) pairs.
+
+    Each BBC article file starts with its headline on the first line, then a
+    blank line, then the body. We use the body as input and the headline as
+    the target - the classic "headline generation" summarization task.
+
+    The headline is *removed* from the encoder input. If it were left in, the
+    task would collapse into copying the first ~5 tokens of the input.
+    """
+    pairs = []
+    for category in sorted(os.listdir(ARTICLES_DIR)):
+        article_dir = os.path.join(ARTICLES_DIR, category)
+        for fname in sorted(os.listdir(article_dir)):
+            with open(os.path.join(article_dir, fname),
+                      encoding="utf-8", errors="ignore") as f:
+                lines = [l.strip() for l in f.read().split("\n") if l.strip()]
+            if len(lines) < 2:
+                continue
+            headline = tokenize(lines[0])
+            body = tokenize(" ".join(lines[1:]))
+            if headline and body:
+                pairs.append((body, headline))
+    return pairs
+
+
 def prepare_dataset(
     vocab_size=8000,
     enc_max_len=60,
-    dec_max_len=32,
+    dec_max_len=None,
     val_fraction=0.1,
     seed=0,
     cache_path=None,
     augment=False,
     skip_opening=False,
+    target_mode="headline",
 ):
     """Build (or load from cache) the full encoded dataset + vocab.
 
-    The decoder target is the article's "key sentence" - see
-    select_key_sentence() for why that beats truncating the raw summary.
+    target_mode picks what the decoder is asked to produce:
+
+      "headline"       input = article body (headline stripped)
+                       target = the headline, ~5 tokens.
+                       Genuinely abstractive, and the trivial lead-1 baseline
+                       only scores ROUGE-L 0.17, so beating it means something.
+
+      "lead_sentence"  input = whole article
+                       target = the earliest-appearing summary sentence, which
+                       is usually the article's own lead sentence (see
+                       select_key_sentence). Extractive and easy to learn, but
+                       the lead-1 baseline scores 0.66 - i.e. the trivial
+                       baseline is very hard to beat, so a good score here
+                       proves much less.
 
     Returns a dict with keys:
       enc_ids_train, dec_ids_train, enc_ids_val, dec_ids_val  (int32 arrays)
       stoi, itos
-      raw_val: list of (article_tokens, target_tokens) for the val split,
+      raw_val: list of (input_tokens, target_tokens) for the val split,
                kept for human-readable inspection in generate.py
     """
+    if target_mode not in ("headline", "lead_sentence"):
+        raise ValueError(f"unknown target_mode: {target_mode!r}")
+    if dec_max_len is None:
+        # Headlines are ~5 tokens (p90 = 7); lead sentences ~24 (p90 = 34).
+        dec_max_len = 10 if target_mode == "headline" else 40
     if cache_path is None:
         cache_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "data_cache.npz"
         )
 
     # The tag invalidates caches built with any older target scheme.
-    config_tag = (f"keysent-skip{int(skip_opening)}-aug{int(augment)}-{vocab_size}"
-                  f"-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}")
+    config_tag = (f"{target_mode}-skip{int(skip_opening)}-aug{int(augment)}"
+                  f"-{vocab_size}-{enc_max_len}-{dec_max_len}-{val_fraction}-{seed}")
 
     if os.path.exists(cache_path):
         cached = np.load(cache_path, allow_pickle=True)
@@ -253,7 +306,8 @@ def prepare_dataset(
             }
 
     print("Preprocessing dataset from raw text files (first run only)...")
-    raw_pairs = load_pairs()
+    raw_pairs = (load_headline_pairs() if target_mode == "headline"
+                 else load_pairs())
 
     # Shuffle and split by ARTICLE *before* augmenting, so that no article
     # contributes sentences to both splits - otherwise validation would be
@@ -275,25 +329,30 @@ def prepare_dataset(
     # practice training stalls (loss stuck ~5.75, moving 0.025/epoch, with
     # train and val loss nearly equal - classic underfitting). More examples
     # are not worth an ambiguous target, so this is off by default.
-    train_pairs = []
-    for article, summary in train_raw:
-        if augment:
-            train_pairs.extend(build_examples(article, summary, enc_max_len,
-                                              skip_opening=skip_opening))
-        else:
-            train_pairs.append((article,
-                                select_key_sentence(article, summary,
-                                                    skip_opening=skip_opening)))
+    if target_mode == "headline":
+        # load_headline_pairs already returns exactly (body, headline).
+        train_pairs, val_pairs = list(train_raw), list(val_raw)
+    else:
+        train_pairs = []
+        for article, summary in train_raw:
+            if augment:
+                train_pairs.extend(build_examples(article, summary, enc_max_len,
+                                                  skip_opening=skip_opening))
+            else:
+                train_pairs.append((article,
+                                    select_key_sentence(article, summary,
+                                                        skip_opening=skip_opening)))
 
-    # Validation set: exactly ONE target per article, so ROUGE stays a clean
-    # per-article measure rather than being dominated by articles that happen
-    # to have many summary sentences.
-    val_pairs = [(article, select_key_sentence(article, summary,
-                                               skip_opening=skip_opening))
-                 for article, summary in val_raw]
+        # Validation set: exactly ONE target per article, so ROUGE stays a clean
+        # per-article measure rather than being dominated by articles that happen
+        # to have many summary sentences.
+        val_pairs = [(article, select_key_sentence(article, summary,
+                                                   skip_opening=skip_opening))
+                     for article, summary in val_raw]
 
-    print(f"  {len(train_raw)} train articles -> {len(train_pairs)} training examples"
-          + (" (sentence augmentation ON)" if augment else " (one target per article)"))
+    print(f"  target_mode={target_mode}: {len(train_raw)} train articles -> "
+          f"{len(train_pairs)} training examples"
+          + (" (sentence augmentation ON)" if augment and target_mode != "headline" else ""))
 
     stoi, itos = build_vocab(
         [tokens for tokens, _ in train_pairs] + [tokens for _, tokens in train_pairs],

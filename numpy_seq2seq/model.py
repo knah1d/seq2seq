@@ -166,7 +166,12 @@ class Seq2SeqAttention:
 
         dec_input_ids = dec_ids[:, :-1]
         dec_target_ids = dec_ids[:, 1:]
-        dec_mask = (dec_target_ids != PAD_ID).astype(np.float64)
+        # Mask out padding AND <unk>. greedy_decode is forbidden from emitting
+        # <unk> (see BANNED_OUTPUT_IDS), so training the model to predict it
+        # would spend capacity on a token we then block - and skew the softmax
+        # for the tokens we do want.
+        dec_mask = ((dec_target_ids != PAD_ID)
+                    & (dec_target_ids != UNK_ID)).astype(np.float64)
         T_step = dec_input_ids.shape[1]
 
         X_dec, dec_emb_cache = embedding_forward(dec_input_ids, params["W_emb"])
@@ -270,7 +275,7 @@ class Seq2SeqAttention:
     # ------------------------------------------------------------------
     # Inference: greedy decoding (argmax at every step, no teacher forcing).
     # ------------------------------------------------------------------
-    def greedy_decode(self, enc_ids, max_len=20):
+    def greedy_decode(self, enc_ids, max_len=20, block_repeats=False):
         params = self.params
         H_enc, U_H_enc, enc_mask, s0, c0, _ = self._encode(enc_ids)
         B = enc_ids.shape[0]
@@ -294,11 +299,12 @@ class Seq2SeqAttention:
             logits_t[:, list(BANNED_OUTPUT_IDS)] = -np.inf
 
             next_ids = np.argmax(logits_t, axis=1)
-            # Block immediate repeats (picking the same word twice in a row)
-            # by falling back to the 2nd-best logit - a cheap, standard fix
-            # for the "new deal for the new deal for the new deal" loops an
-            # undertrained greedy decoder tends to fall into.
-            repeat = (next_ids == cur_ids) & (cur_ids != SOS_ID)
+            # Optionally block immediate repeats by falling back to the
+            # 2nd-best logit. OFF by default: it only hides the symptom. When
+            # the decoder was ignoring the encoder it turned "the the the"
+            # into "the a the a", which looked like a different bug and cost
+            # real debugging time. Leave it off to see what the model does.
+            repeat = block_repeats & (next_ids == cur_ids) & (cur_ids != SOS_ID)
             if repeat.any():
                 logits_masked = logits_t.copy()
                 logits_masked[repeat, next_ids[repeat]] = -np.inf

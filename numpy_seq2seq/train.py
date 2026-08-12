@@ -51,8 +51,15 @@ def evaluate(model, enc_ids, dec_ids, batch_size, rng):
 
 
 def ids_to_tokens(ids, itos):
-    """Same as ids_to_text but returns a token list, for ROUGE."""
-    return ids_to_text(ids, itos).split()
+    """Token list for ROUGE scoring, with <unk> removed.
+
+    The model is banned from emitting <unk> at decode time, so leaving <unk>
+    in the references would charge it for matches it can never make - and
+    would let the lead-1 baseline (built from article tokens, which do contain
+    <unk>) score on them. Dropping it from both sides keeps the comparison
+    like-for-like.
+    """
+    return [t for t in ids_to_text(ids, itos).split() if t != "<unk>"]
 
 
 def evaluate_rouge(model, ds, batch_size, max_examples=222):
@@ -110,8 +117,14 @@ def show_samples(model, ds, num_samples=2):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--vocab_size", type=int, default=8000)
+    parser.add_argument("--target_mode", type=str, default="headline",
+                         choices=["headline", "lead_sentence"],
+                         help="headline: body -> headline (abstractive, baseline RL~0.17). "
+                              "lead_sentence: article -> its lead sentence "
+                              "(extractive, baseline RL~0.66 and very hard to beat)")
     parser.add_argument("--enc_max_len", type=int, default=60)
-    parser.add_argument("--dec_max_len", type=int, default=32)
+    parser.add_argument("--dec_max_len", type=int, default=None,
+                         help="default: 10 for headline, 40 for lead_sentence")
     parser.add_argument("--emb_dim", type=int, default=96)
     parser.add_argument("--hidden_size", type=int, default=128)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -135,6 +148,7 @@ def main():
         vocab_size=args.vocab_size,
         enc_max_len=args.enc_max_len,
         dec_max_len=args.dec_max_len,
+        target_mode=args.target_mode,
     )
     print(f"train examples: {len(ds['enc_ids_train'])}, val examples: {len(ds['enc_ids_val'])}")
     print(f"vocab size: {len(ds['itos'])}")
@@ -147,7 +161,7 @@ def main():
     rng = np.random.RandomState(args.seed)
 
     baseline = lead_baseline_rouge(ds)
-    print(f"lead-1 baseline (emit the article's first sentence): "
+    print(f"lead-1 baseline (emit the input's first sentence): "
           f"R1={baseline['rouge1']:.3f} R2={baseline['rouge2']:.3f} RL={baseline['rougeL']:.3f}",
           flush=True)
     print("  -> the model needs to beat this to have learned anything useful.\n", flush=True)
