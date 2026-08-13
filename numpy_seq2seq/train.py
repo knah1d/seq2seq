@@ -125,11 +125,12 @@ def show_samples(model, ds, num_samples=2):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--vocab_size", type=int, default=8000)
-    parser.add_argument("--target_mode", type=str, default="headline",
+    parser.add_argument("--target_mode", type=str, default="lead_sentence",
                          choices=["headline", "lead_sentence"],
-                         help="headline: body -> headline (abstractive, baseline RL~0.17). "
-                              "lead_sentence: article -> its lead sentence "
-                              "(extractive, baseline RL~0.66 and very hard to beat)")
+                         help="lead_sentence (default): article -> its lead sentence "
+                              "(extractive; baseline RL~0.71, but --pointer gets close to it). "
+                              "headline: body -> headline (abstractive, baseline RL~0.18; "
+                              "harder - see README's 'experiments that failed').")
     parser.add_argument("--enc_max_len", type=int, default=60)
     parser.add_argument("--dec_max_len", type=int, default=None,
                          help="default: 10 for headline, 40 for lead_sentence")
