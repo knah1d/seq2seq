@@ -21,13 +21,15 @@ from model import Seq2SeqAttention
 USE_DROPOUT = "--dropout" in sys.argv
 DROPOUT_P = 0.3 if USE_DROPOUT else 0.0
 TIE = "--tie" in sys.argv
+PTR = "--pointer" in sys.argv
 
 np.random.seed(0)
 
 VOCAB, EMB, HID = 30, 8, 10
 B, T_ENC, T_DEC = 3, 5, 4
 
-model = Seq2SeqAttention(VOCAB, EMB, HID, dropout=DROPOUT_P, tie_weights=TIE, seed=1)
+model = Seq2SeqAttention(VOCAB, EMB, HID, dropout=DROPOUT_P, tie_weights=TIE,
+                         use_pointer=PTR, seed=1)
 
 enc_ids = np.random.randint(4, VOCAB, size=(B, T_ENC)).astype(np.int32)
 enc_ids[0, -2:] = 0  # exercise the padding/masking path
@@ -47,7 +49,7 @@ def loss_fn():
     return loss
 
 
-print(f"tie_weights={TIE}  dropout during check: {DROPOUT_P}"
+print(f"tie_weights={TIE}  use_pointer={PTR}  dropout: {DROPOUT_P}"
       f"{'  (pass --dropout to enable)' if not USE_DROPOUT else ''}\n")
 
 _, _, cache = forward_fixed_mask()
@@ -64,6 +66,9 @@ checks = [
     ("dec_Wxi", (2, 3)), ("dec_Whf", (0, 0)), ("dec_Wxo", (1, 1)), ("dec_Whg", (3, 2)),
     ("W_bridge_h", (1, 1)), ("W_bridge_c", (0, 2)),
 ]
+if PTR:
+    checks += [("w_gen_h", (0, 0)), ("w_gen_c", (4, 0)),
+               ("w_gen_x", (2, 0)), ("b_gen", (0,))]
 
 print(f"{'param':10s} {'index':10s} {'analytic':>14s} {'numeric':>14s} {'rel_err':>10s}")
 for name, idx in checks:

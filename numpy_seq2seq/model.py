@@ -22,7 +22,7 @@ from layers import (
     lstm_cell_params, lstm_cell_forward, lstm_cell_backward,
     attention_params, precompute_encoder_proj, attention_forward, attention_backward,
     dense_forward, dense_backward, dropout_forward, dropout_backward,
-    softmax_ce_loss, init_matrix,
+    softmax_ce_loss, pointer_ce_loss, pointer_final_probs, init_matrix,
 )
 
 PAD_ID = 0
@@ -38,12 +38,13 @@ BANNED_OUTPUT_IDS = (PAD_ID, SOS_ID, UNK_ID)
 
 class Seq2SeqAttention:
     def __init__(self, vocab_size, emb_dim=96, hidden_size=128, dropout=0.0,
-                 tie_weights=False, seed=0):
+                 tie_weights=False, use_pointer=False, seed=0):
         self.V = vocab_size
         self.E = emb_dim
         self.H = hidden_size
         self.dropout = dropout
         self.tie_weights = tie_weights
+        self.use_pointer = use_pointer
         self.rng = np.random.RandomState(seed + 1234)
         rng = np.random.RandomState(seed)
 
@@ -72,7 +73,32 @@ class Seq2SeqAttention:
         else:
             params["W_out"] = init_matrix(rng, (hidden_size * 2, vocab_size))
         params["b_out"] = np.zeros(vocab_size, dtype=np.float64)
+        if use_pointer:
+            # p_gen = sigmoid(h_t.w_h + context.w_c + x_t.w_x + b_gen):
+            # one scalar per step deciding generate-vs-copy.
+            params["w_gen_h"] = init_matrix(rng, (hidden_size, 1))
+            params["w_gen_c"] = init_matrix(rng, (hidden_size, 1))
+            params["w_gen_x"] = init_matrix(rng, (emb_dim, 1))
+            params["b_gen"] = np.zeros(1, dtype=np.float64)
         self.params = params
+
+    def _p_gen_forward(self, h_t, context_t, x_t):
+        p = self.params
+        pre = (h_t @ p["w_gen_h"] + context_t @ p["w_gen_c"]
+               + x_t @ p["w_gen_x"] + p["b_gen"])
+        return 1.0 / (1.0 + np.exp(-pre))            # (B, 1)
+
+    def _p_gen_backward(self, d_p_gen, p_gen, h_t, context_t, x_t, grads):
+        """Returns (d_h, d_context, d_x); accumulates p_gen param grads."""
+        p = self.params
+        d_pre = d_p_gen * p_gen * (1.0 - p_gen)       # (B, 1)
+        grads["w_gen_h"] = grads.get("w_gen_h", 0.0) + h_t.T @ d_pre
+        grads["w_gen_c"] = grads.get("w_gen_c", 0.0) + context_t.T @ d_pre
+        grads["w_gen_x"] = grads.get("w_gen_x", 0.0) + x_t.T @ d_pre
+        grads["b_gen"] = grads.get("b_gen", 0.0) + d_pre.sum(axis=0)
+        return (d_pre @ p["w_gen_h"].T,
+                d_pre @ p["w_gen_c"].T,
+                d_pre @ p["w_gen_x"].T)
 
     # ------------------------------------------------------------------
     # Output layer: either a plain dense layer (untied) or the tied path
@@ -238,13 +264,24 @@ class Seq2SeqAttention:
             out_input, out_drop_mask = dropout_forward(out_input, self.dropout, self.rng, training)
             logits_t, dense_cache = self._output_forward(out_input)
 
-            loss_t, real_t, d_logits_t = softmax_ce_loss(
-                logits_t, dec_target_ids[:, t], dec_mask[:, t]
-            )
+            if self.use_pointer:
+                x_t = X_dec[:, t, :]
+                p_gen_t = self._p_gen_forward(h_t, context_t, x_t)
+                loss_t, real_t, d_logits_t, d_alpha_t, d_p_gen_t = pointer_ce_loss(
+                    logits_t, alpha_t, enc_ids, p_gen_t,
+                    dec_target_ids[:, t], dec_mask[:, t]
+                )
+                ptr_cache = (p_gen_t, h_t, context_t, x_t, d_alpha_t, d_p_gen_t)
+            else:
+                loss_t, real_t, d_logits_t = softmax_ce_loss(
+                    logits_t, dec_target_ids[:, t], dec_mask[:, t]
+                )
+                ptr_cache = None
             total_loss += loss_t
             total_real += real_t
 
-            step_caches.append((attn_cache, lstm_cache, dense_cache, d_logits_t, out_drop_mask))
+            step_caches.append((attn_cache, lstm_cache, dense_cache, d_logits_t,
+                                out_drop_mask, ptr_cache))
             h_prev, c_prev = h_t, c_t
 
         cache = {
@@ -273,12 +310,24 @@ class Seq2SeqAttention:
         d_h_next = np.zeros((B, H), dtype=np.float64)
         d_c_next = np.zeros((B, H), dtype=np.float64)
         for t in reversed(range(T_step)):
-            attn_cache, lstm_cache, dense_cache, d_logits_t, out_drop_mask = cache["step_caches"][t]
+            (attn_cache, lstm_cache, dense_cache, d_logits_t,
+             out_drop_mask, ptr_cache) = cache["step_caches"][t]
             d_logits_t = d_logits_t / total_real
 
             d_out_input = self._output_backward(d_logits_t, dense_cache, grads)
             d_out_input = dropout_backward(d_out_input, out_drop_mask)
             d_h_t_out, d_context_out = d_out_input[:, :H], d_out_input[:, H:]
+
+            d_alpha_t = None
+            if ptr_cache is not None:
+                p_gen_t, h_t_c, context_t_c, x_t_c, d_alpha_raw, d_p_gen_raw = ptr_cache
+                d_alpha_t = d_alpha_raw / total_real
+                d_h_p, d_ctx_p, d_x_p = self._p_gen_backward(
+                    d_p_gen_raw / total_real, p_gen_t, h_t_c, context_t_c, x_t_c, grads
+                )
+                d_h_t_out = d_h_t_out + d_h_p
+                d_context_out = d_context_out + d_ctx_p
+                d_X_dec[:, t, :] += d_x_p
 
             d_h_t = d_h_t_out + d_h_next
             d_c_t = d_c_next
@@ -288,11 +337,11 @@ class Seq2SeqAttention:
             for k, v in lstm_grads.items():
                 grads[k] = grads.get(k, 0.0) + v
             d_x_t, d_context_lstm = d_lstm_input[:, : self.E], d_lstm_input[:, self.E:]
-            d_X_dec[:, t, :] = d_x_t
+            d_X_dec[:, t, :] += d_x_t
 
             d_context_total = d_context_out + d_context_lstm
             d_h_prev_attn, d_H_enc_t, attn_grads = attention_backward(
-                d_context_total, None, attn_cache
+                d_context_total, d_alpha_t, attn_cache
             )
             for k, v in attn_grads.items():
                 grads[k] = grads.get(k, 0.0) + v
@@ -338,11 +387,16 @@ class Seq2SeqAttention:
             out_input = np.concatenate([h_t, context_t], axis=1)
             logits_t, _ = self._output_forward(out_input)
 
+            if self.use_pointer:
+                p_gen_t = self._p_gen_forward(h_t, context_t, x_t)
+                scores = pointer_final_probs(logits_t, alpha_t, enc_ids, p_gen_t)
+            else:
+                scores = logits_t
             # Never emit <pad>/<sos>/<unk> - see BANNED_OUTPUT_IDS.
-            logits_t = logits_t.copy()
-            logits_t[:, list(BANNED_OUTPUT_IDS)] = -np.inf
+            scores = scores.copy()
+            scores[:, list(BANNED_OUTPUT_IDS)] = -np.inf
 
-            next_ids = np.argmax(logits_t, axis=1)
+            next_ids = np.argmax(scores, axis=1)
             # Optionally block immediate repeats by falling back to the
             # 2nd-best logit. OFF by default: it only hides the symptom. When
             # the decoder was ignoring the encoder it turned "the the the"
@@ -350,9 +404,9 @@ class Seq2SeqAttention:
             # real debugging time. Leave it off to see what the model does.
             repeat = block_repeats & (next_ids == cur_ids) & (cur_ids != SOS_ID)
             if repeat.any():
-                logits_masked = logits_t.copy()
-                logits_masked[repeat, next_ids[repeat]] = -np.inf
-                next_ids[repeat] = np.argmax(logits_masked[repeat], axis=1)
+                masked = scores.copy()
+                masked[repeat, next_ids[repeat]] = -np.inf
+                next_ids[repeat] = np.argmax(masked[repeat], axis=1)
             next_ids = np.where(finished, PAD_ID, next_ids)
             outputs[:, t] = next_ids
             alphas[:, t, :] = alpha_t
@@ -366,13 +420,16 @@ class Seq2SeqAttention:
 
     def save(self, path):
         np.savez_compressed(path, **self.params, V=self.V, E=self.E, H=self.H,
-                            tie_weights=int(self.tie_weights))
+                            tie_weights=int(self.tie_weights),
+                            use_pointer=int(self.use_pointer))
 
     @classmethod
     def load(cls, path):
         data = np.load(path)
         tied = bool(int(data["tie_weights"])) if "tie_weights" in data else False
-        model = cls(int(data["V"]), int(data["E"]), int(data["H"]), tie_weights=tied)
+        ptr = bool(int(data["use_pointer"])) if "use_pointer" in data else False
+        model = cls(int(data["V"]), int(data["E"]), int(data["H"]),
+                    tie_weights=tied, use_pointer=ptr)
         for k in model.params:
             model.params[k] = data[k]
         return model

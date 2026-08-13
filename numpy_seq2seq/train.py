@@ -141,6 +141,11 @@ def main():
     parser.add_argument("--clip_norm", type=float, default=5.0)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--weight_decay", type=float, default=1e-5)
+    parser.add_argument("--pointer", action="store_true",
+                         help="pointer-generator: let the decoder COPY a word from the input "
+                              "using the attention weights, instead of only generating from "
+                              "the softmax. Targets the measured bottleneck - rare words the "
+                              "8000-way softmax can never learn.")
     parser.add_argument("--tie_weights", action="store_true",
                          help="reuse W_emb as the output layer (cuts ~2M params and lets "
                               "the output side inherit the encoder's much larger supervision)")
@@ -167,10 +172,11 @@ def main():
     model = Seq2SeqAttention(
         vocab_size=len(ds["itos"]), emb_dim=args.emb_dim,
         hidden_size=args.hidden_size, dropout=args.dropout,
-        tie_weights=args.tie_weights, seed=args.seed,
+        tie_weights=args.tie_weights, use_pointer=args.pointer, seed=args.seed,
     )
     n_params = sum(p.size for p in model.params.values())
-    print(f"parameters: {n_params:,}  (tie_weights={args.tie_weights})")
+    print(f"parameters: {n_params:,}  (tie_weights={args.tie_weights}, "
+          f"pointer={args.pointer})")
     optimizer = Adam(model.params, lr=args.lr, weight_decay=args.weight_decay)
     rng = np.random.RandomState(args.seed)
 

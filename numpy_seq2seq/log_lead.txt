@@ -1,0 +1,637 @@
+Preprocessing dataset from raw text files (first run only)...
+  dropped 119 duplicate articles (2225 -> 2106)
+  target_mode=lead_sentence: 1896 train articles -> 1896 training examples
+Cached preprocessed data to /home/nahid/Desktop/seq2seq/numpy_seq2seq/data_cache.npz
+train examples: 1896, val examples: 210
+vocab size: 8000
+parameters: 3,185,856  (tie_weights=False)
+lead-1 baseline (emit the input's first sentence): R1=0.723 R2=0.674 RL=0.712
+  -> the model needs to beat this to have learned anything useful.
+
+  epoch 1 batch 20/60 loss=8.2050 (29s elapsed, ~57s left in epoch)
+  epoch 1 batch 40/60 loss=7.5666 (57s elapsed, ~29s left in epoch)
+  epoch 1 batch 60/60 loss=7.3203 (90s elapsed, ~0s left in epoch)
+epoch 1/60 - train_loss=7.3203 val_loss=6.5919 val_ppl=729.17 | R1=0.059 R2=0.000 RL=0.059 div=0.00 | lr=1.00e-03 (95.2s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the the the the the the the the the the the the the the the the the the the the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the the the the the the the the the the the the the the the the the the the the
+  epoch 2 batch 20/60 loss=6.6152 (28s elapsed, ~57s left in epoch)
+  epoch 2 batch 40/60 loss=6.5972 (57s elapsed, ~28s left in epoch)
+  epoch 2 batch 60/60 loss=6.5777 (85s elapsed, ~0s left in epoch)
+epoch 2/60 - train_loss=6.5777 val_loss=6.4654 val_ppl=642.54 | R1=0.100 R2=0.000 RL=0.100 div=0.00 | lr=1.00e-03 (90.1s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the .
+  epoch 3 batch 20/60 loss=6.4106 (28s elapsed, ~56s left in epoch)
+  epoch 3 batch 40/60 loss=6.4018 (57s elapsed, ~28s left in epoch)
+  epoch 3 batch 60/60 loss=6.3981 (84s elapsed, ~0s left in epoch)
+epoch 3/60 - train_loss=6.3981 val_loss=6.3283 val_ppl=560.20 | R1=0.040 R2=0.000 RL=0.040 div=0.00 | lr=1.00e-03 (90.6s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  epoch 4 batch 20/60 loss=6.2546 (29s elapsed, ~57s left in epoch)
+  epoch 4 batch 40/60 loss=6.2446 (57s elapsed, ~29s left in epoch)
+  epoch 4 batch 60/60 loss=6.2450 (85s elapsed, ~0s left in epoch)
+epoch 4/60 - train_loss=6.2450 val_loss=6.2102 val_ppl=497.80 | R1=0.040 R2=0.000 RL=0.040 div=0.00 | lr=1.00e-03 (91.3s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  epoch 5 batch 20/60 loss=6.0907 (28s elapsed, ~57s left in epoch)
+  epoch 5 batch 40/60 loss=6.0994 (57s elapsed, ~28s left in epoch)
+  epoch 5 batch 60/60 loss=6.1011 (85s elapsed, ~0s left in epoch)
+epoch 5/60 - train_loss=6.1011 val_loss=6.1216 val_ppl=455.58 | R1=0.040 R2=0.000 RL=0.040 div=0.00 | lr=1.00e-03 (90.6s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  epoch 6 batch 20/60 loss=5.9598 (20s elapsed, ~40s left in epoch)
+  epoch 6 batch 40/60 loss=5.9799 (40s elapsed, ~20s left in epoch)
+  epoch 6 batch 60/60 loss=5.9800 (60s elapsed, ~0s left in epoch)
+epoch 6/60 - train_loss=5.9800 val_loss=6.0572 val_ppl=427.20 | R1=0.071 R2=0.004 RL=0.064 div=0.00 | lr=1.00e-03 (64.4s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us has has has to the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us has has has to the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the
+  epoch 7 batch 20/60 loss=5.8709 (20s elapsed, ~40s left in epoch)
+  epoch 7 batch 40/60 loss=5.8799 (40s elapsed, ~20s left in epoch)
+  epoch 7 batch 60/60 loss=5.8776 (60s elapsed, ~0s left in epoch)
+epoch 7/60 - train_loss=5.8776 val_loss=6.0105 val_ppl=407.69 | R1=0.142 R2=0.010 RL=0.131 div=0.00 | lr=1.00e-03 (63.1s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us has has been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us has has been been been been been been said .
+  epoch 8 batch 20/60 loss=5.7882 (20s elapsed, ~40s left in epoch)
+  epoch 8 batch 40/60 loss=5.7875 (40s elapsed, ~20s left in epoch)
+  epoch 8 batch 60/60 loss=5.7845 (59s elapsed, ~0s left in epoch)
+epoch 8/60 - train_loss=5.7845 val_loss=5.9665 val_ppl=390.13 | R1=0.137 R2=0.010 RL=0.127 div=0.01 | lr=1.00e-03 (62.4s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us has been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us has been been been been been been been been said .
+  epoch 9 batch 20/60 loss=5.6683 (20s elapsed, ~40s left in epoch)
+  epoch 9 batch 40/60 loss=5.6853 (39s elapsed, ~20s left in epoch)
+  epoch 9 batch 60/60 loss=5.7049 (58s elapsed, ~0s left in epoch)
+epoch 9/60 - train_loss=5.7049 val_loss=5.9552 val_ppl=385.74 | R1=0.137 R2=0.009 RL=0.125 div=0.01 | lr=1.00e-03 (62.1s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us s us has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us s us has been been been been been been been been been said .
+  epoch 10 batch 20/60 loss=5.6115 (20s elapsed, ~39s left in epoch)
+  epoch 10 batch 40/60 loss=5.6094 (39s elapsed, ~20s left in epoch)
+  epoch 10 batch 60/60 loss=5.6169 (58s elapsed, ~0s left in epoch)
+epoch 10/60 - train_loss=5.6169 val_loss=5.8927 val_ppl=362.39 | R1=0.138 R2=0.008 RL=0.126 div=0.01 | lr=1.00e-03 (61.9s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us s us has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us s us has been been been been been been been been been said .
+  epoch 11 batch 20/60 loss=5.5040 (20s elapsed, ~39s left in epoch)
+  epoch 11 batch 40/60 loss=5.5202 (39s elapsed, ~20s left in epoch)
+  epoch 11 batch 60/60 loss=5.5337 (58s elapsed, ~0s left in epoch)
+epoch 11/60 - train_loss=5.5337 val_loss=5.8660 val_ppl=352.84 | R1=0.130 R2=0.009 RL=0.121 div=0.01 | lr=1.00e-03 (62.0s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us film has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us film has been been been been been been been been been said .
+  epoch 12 batch 20/60 loss=5.4316 (19s elapsed, ~38s left in epoch)
+  epoch 12 batch 40/60 loss=5.4390 (39s elapsed, ~20s left in epoch)
+  epoch 12 batch 60/60 loss=5.4561 (58s elapsed, ~0s left in epoch)
+epoch 12/60 - train_loss=5.4561 val_loss=5.8467 val_ppl=346.09 | R1=0.116 R2=0.009 RL=0.108 div=0.08 | lr=1.00e-03 (62.6s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us film has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us film has been been been been been been been been been said .
+  epoch 13 batch 20/60 loss=5.3461 (20s elapsed, ~40s left in epoch)
+  epoch 13 batch 40/60 loss=5.3714 (40s elapsed, ~20s left in epoch)
+  epoch 13 batch 60/60 loss=5.3820 (59s elapsed, ~0s left in epoch)
+epoch 13/60 - train_loss=5.3820 val_loss=5.8171 val_ppl=336.00 | R1=0.127 R2=0.009 RL=0.119 div=0.01 | lr=1.00e-03 (62.9s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us film has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us film has been been been been been been been been been said .
+  epoch 14 batch 20/60 loss=5.2900 (20s elapsed, ~40s left in epoch)
+  epoch 14 batch 40/60 loss=5.3026 (40s elapsed, ~20s left in epoch)
+  epoch 14 batch 60/60 loss=5.3099 (59s elapsed, ~0s left in epoch)
+epoch 14/60 - train_loss=5.3099 val_loss=5.8000 val_ppl=330.29 | R1=0.131 R2=0.009 RL=0.122 div=0.05 | lr=1.00e-03 (63.0s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us film has been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us film has been been been been been been been been said .
+  epoch 15 batch 20/60 loss=5.1908 (20s elapsed, ~40s left in epoch)
+  epoch 15 batch 40/60 loss=5.2271 (40s elapsed, ~20s left in epoch)
+  epoch 15 batch 60/60 loss=5.2415 (60s elapsed, ~0s left in epoch)
+epoch 15/60 - train_loss=5.2415 val_loss=5.7766 val_ppl=322.67 | R1=0.128 R2=0.009 RL=0.119 div=0.02 | lr=1.00e-03 (63.8s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us minister has been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us minister has been been been been been been been been said .
+  epoch 16 batch 20/60 loss=5.1376 (20s elapsed, ~40s left in epoch)
+  epoch 16 batch 40/60 loss=5.1601 (40s elapsed, ~20s left in epoch)
+  epoch 16 batch 60/60 loss=5.1668 (60s elapsed, ~0s left in epoch)
+epoch 16/60 - train_loss=5.1668 val_loss=5.7695 val_ppl=320.37 | R1=0.106 R2=0.009 RL=0.098 div=0.16 | lr=1.00e-03 (64.2s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us film has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us film , the us film , the us film , the us , the us , the us , the new year , the new year , the new year , the new year , the new year
+  epoch 17 batch 20/60 loss=5.0841 (20s elapsed, ~40s left in epoch)
+  epoch 17 batch 40/60 loss=5.1024 (40s elapsed, ~20s left in epoch)
+  epoch 17 batch 60/60 loss=5.1052 (59s elapsed, ~0s left in epoch)
+epoch 17/60 - train_loss=5.1052 val_loss=5.7378 val_ppl=310.38 | R1=0.116 R2=0.010 RL=0.108 div=0.14 | lr=1.00e-03 (63.9s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us minister has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us film , the us film , the uk of the uk s uk , the uk s new year , the new year , the new year , the year s new election .
+  epoch 18 batch 20/60 loss=4.9827 (20s elapsed, ~40s left in epoch)
+  epoch 18 batch 40/60 loss=4.9964 (40s elapsed, ~20s left in epoch)
+  epoch 18 batch 60/60 loss=5.0098 (60s elapsed, ~0s left in epoch)
+epoch 18/60 - train_loss=5.0098 val_loss=5.7177 val_ppl=304.20 | R1=0.135 R2=0.012 RL=0.122 div=0.35 | lr=1.00e-03 (64.7s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us minister has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us film , has been been been been been than the year , the uk of the year .
+  epoch 19 batch 20/60 loss=4.8946 (20s elapsed, ~40s left in epoch)
+  epoch 19 batch 40/60 loss=4.8967 (40s elapsed, ~20s left in epoch)
+  epoch 19 batch 60/60 loss=4.9096 (60s elapsed, ~0s left in epoch)
+epoch 19/60 - train_loss=4.9096 val_loss=5.6952 val_ppl=297.42 | R1=0.115 R2=0.010 RL=0.105 div=0.38 | lr=1.00e-03 (64.6s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us party has been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us economy has been been been than the uk of the year s year s year s year s year s year .
+  epoch 20 batch 20/60 loss=4.7694 (21s elapsed, ~41s left in epoch)
+  epoch 20 batch 40/60 loss=4.7798 (41s elapsed, ~20s left in epoch)
+  epoch 20 batch 60/60 loss=4.8028 (61s elapsed, ~0s left in epoch)
+epoch 20/60 - train_loss=4.8028 val_loss=5.6745 val_ppl=291.34 | R1=0.127 R2=0.011 RL=0.114 div=0.42 | lr=1.00e-03 (64.9s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us minister has been been been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us firm is to be to be to be to be to be to be a next year .
+  epoch 21 batch 20/60 loss=4.6194 (21s elapsed, ~41s left in epoch)
+  epoch 21 batch 40/60 loss=4.6640 (41s elapsed, ~20s left in epoch)
+  epoch 21 batch 60/60 loss=4.6969 (60s elapsed, ~0s left in epoch)
+epoch 21/60 - train_loss=4.6969 val_loss=5.6518 val_ppl=284.81 | R1=0.130 R2=0.012 RL=0.115 div=0.57 | lr=1.00e-03 (64.8s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us party has been been been been been been been been been been said .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us company is to be to be to be to be to the world s six nations , the country s exchange .
+  epoch 22 batch 20/60 loss=4.5225 (20s elapsed, ~40s left in epoch)
+  epoch 22 batch 40/60 loss=4.5504 (40s elapsed, ~20s left in epoch)
+  epoch 22 batch 60/60 loss=4.5859 (59s elapsed, ~0s left in epoch)
+epoch 22/60 - train_loss=4.5859 val_loss=5.6253 val_ppl=277.36 | R1=0.148 R2=0.014 RL=0.130 div=0.73 | lr=1.00e-03 (63.2s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us firm is to make the us phone , 000 , 000 , 000 , 000 , 000 , 000 , 000 , 000 , 000 , according to a six nations .
+  epoch 23 batch 20/60 loss=4.4153 (20s elapsed, ~41s left in epoch)
+  epoch 23 batch 40/60 loss=4.4553 (40s elapsed, ~20s left in epoch)
+  epoch 23 batch 60/60 loss=4.4691 (60s elapsed, ~0s left in epoch)
+epoch 23/60 - train_loss=4.4691 val_loss=5.6184 val_ppl=275.44 | R1=0.154 R2=0.016 RL=0.137 div=0.79 | lr=1.00e-03 (64.4s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us firm is to be to be to be to be a new six nations .
+  epoch 24 batch 20/60 loss=4.3029 (20s elapsed, ~40s left in epoch)
+  epoch 24 batch 40/60 loss=4.3251 (40s elapsed, ~20s left in epoch)
+  epoch 24 batch 60/60 loss=4.3525 (60s elapsed, ~0s left in epoch)
+epoch 24/60 - train_loss=4.3525 val_loss=5.6059 val_ppl=272.03 | R1=0.164 R2=0.018 RL=0.149 div=0.84 | lr=1.00e-03 (64.0s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s england has been been launched to a six nations , the six nations , the six nations .
+  epoch 25 batch 20/60 loss=4.1841 (21s elapsed, ~41s left in epoch)
+  epoch 25 batch 40/60 loss=4.2225 (41s elapsed, ~20s left in epoch)
+  epoch 25 batch 60/60 loss=4.2489 (61s elapsed, ~0s left in epoch)
+epoch 25/60 - train_loss=4.2489 val_loss=5.5931 val_ppl=268.57 | R1=0.174 R2=0.021 RL=0.155 div=0.90 | lr=1.00e-03 (65.1s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s six nations firm is to make a six nations m in the six nations m in the six nations .
+  epoch 26 batch 20/60 loss=4.0666 (20s elapsed, ~40s left in epoch)
+  epoch 26 batch 40/60 loss=4.1047 (40s elapsed, ~20s left in epoch)
+  epoch 26 batch 60/60 loss=4.1339 (60s elapsed, ~0s left in epoch)
+epoch 26/60 - train_loss=4.1339 val_loss=5.5757 val_ppl=263.94 | R1=0.165 R2=0.016 RL=0.147 div=0.89 | lr=1.00e-03 (64.8s)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the us phone , 000 have been been been been been been been been warned .
+  epoch 27 batch 20/60 loss=3.9715 (20s elapsed, ~39s left in epoch)
+  epoch 27 batch 40/60 loss=4.0086 (40s elapsed, ~20s left in epoch)
+  epoch 27 batch 60/60 loss=4.0243 (60s elapsed, ~0s left in epoch)
+epoch 27/60 - train_loss=4.0243 val_loss=5.5836 val_ppl=266.02 | R1=0.177 R2=0.022 RL=0.157 div=0.93 | lr=1.00e-03 (64.2s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  -> no val_loss improvement (1)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us and michael howard has been been launched to be to be to be to
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s six nations have been been been been been slam to win the six nations .
+  epoch 28 batch 20/60 loss=3.8807 (20s elapsed, ~40s left in epoch)
+  epoch 28 batch 40/60 loss=3.9076 (40s elapsed, ~20s left in epoch)
+  epoch 28 batch 60/60 loss=3.9218 (60s elapsed, ~0s left in epoch)
+epoch 28/60 - train_loss=3.9218 val_loss=5.5778 val_ppl=264.48 | R1=0.181 R2=0.019 RL=0.160 div=0.92 | lr=1.00e-03 (64.1s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  -> no val_loss improvement (2)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the world s world s world s world s first nations will be to be to be a new six nations indoor championships in the six nations .
+  epoch 29 batch 20/60 loss=3.7526 (20s elapsed, ~41s left in epoch)
+  epoch 29 batch 40/60 loss=3.7991 (41s elapsed, ~20s left in epoch)
+  epoch 29 batch 60/60 loss=3.8123 (61s elapsed, ~0s left in epoch)
+epoch 29/60 - train_loss=3.8123 val_loss=5.5820 val_ppl=265.61 | R1=0.176 R2=0.022 RL=0.158 div=0.93 | lr=1.00e-03 (64.9s)
+  -> no val_loss improvement (3)
+  -> lowered learning rate to 5.00e-04
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: the world s first nations union is to be to be to be to be to the first nations .
+  epoch 30 batch 20/60 loss=3.6295 (21s elapsed, ~41s left in epoch)
+  epoch 30 batch 40/60 loss=3.6394 (41s elapsed, ~20s left in epoch)
+  epoch 30 batch 60/60 loss=3.6518 (60s elapsed, ~0s left in epoch)
+epoch 30/60 - train_loss=3.6518 val_loss=5.5623 val_ppl=260.43 | R1=0.188 R2=0.022 RL=0.167 div=0.94 | lr=5.00e-04 (64.9s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman s england s first open in the first open in the world s six nations union championships in the dubai union championships .
+  epoch 31 batch 20/60 loss=3.5580 (20s elapsed, ~40s left in epoch)
+  epoch 31 batch 40/60 loss=3.5676 (40s elapsed, ~20s left in epoch)
+  epoch 31 batch 60/60 loss=3.5750 (60s elapsed, ~0s left in epoch)
+epoch 31/60 - train_loss=3.5750 val_loss=5.5789 val_ppl=264.79 | R1=0.191 R2=0.022 RL=0.170 div=0.97 | lr=5.00e-04 (64.0s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  -> no val_loss improvement (1)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us of the us of the us and michael howard has been launched to be a new team to a new
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman s england s first nations match in the first open in the world s six nations union .
+  epoch 32 batch 20/60 loss=3.5092 (20s elapsed, ~39s left in epoch)
+  epoch 32 batch 40/60 loss=3.5001 (39s elapsed, ~20s left in epoch)
+  epoch 32 batch 60/60 loss=3.5174 (59s elapsed, ~0s left in epoch)
+epoch 32/60 - train_loss=3.5174 val_loss=5.5852 val_ppl=266.47 | R1=0.191 R2=0.023 RL=0.169 div=0.96 | lr=5.00e-04 (63.1s)
+  -> no val_loss improvement (2)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: the us of the us of the us of the us of the us of the us of the us and david blunkett has said he was to be to be to be a zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s england s england will be a first six nations match in the six nations .
+  epoch 33 batch 20/60 loss=3.4553 (20s elapsed, ~40s left in epoch)
+  epoch 33 batch 40/60 loss=3.4422 (40s elapsed, ~20s left in epoch)
+  epoch 33 batch 60/60 loss=3.4618 (59s elapsed, ~0s left in epoch)
+epoch 33/60 - train_loss=3.4618 val_loss=5.5868 val_ppl=266.88 | R1=0.189 R2=0.025 RL=0.170 div=0.95 | lr=5.00e-04 (63.8s)
+  -> no val_loss improvement (3)
+  -> lowered learning rate to 2.50e-04
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a us of the us of the us of the us of a us of a us of a us of a us of a us of a us of the us of the us of the us of the
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s england s england will be a first open in the first open .
+  epoch 34 batch 20/60 loss=3.3614 (20s elapsed, ~40s left in epoch)
+  epoch 34 batch 40/60 loss=3.3888 (40s elapsed, ~20s left in epoch)
+  epoch 34 batch 60/60 loss=3.3847 (60s elapsed, ~0s left in epoch)
+epoch 34/60 - train_loss=3.3847 val_loss=5.5921 val_ppl=268.31 | R1=0.196 R2=0.025 RL=0.172 div=0.97 | lr=2.50e-04 (64.4s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  -> no val_loss improvement (4)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a us of the us of the us of the us of a us of a us of a us of a us and singer is to be a new team to a new deal to a new deal to
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be a first open in the first open in the first open .
+  epoch 35 batch 20/60 loss=3.3537 (20s elapsed, ~40s left in epoch)
+  epoch 35 batch 40/60 loss=3.3359 (39s elapsed, ~20s left in epoch)
+  epoch 35 batch 60/60 loss=3.3439 (59s elapsed, ~0s left in epoch)
+epoch 35/60 - train_loss=3.3439 val_loss=5.5970 val_ppl=269.62 | R1=0.203 R2=0.027 RL=0.178 div=0.97 | lr=2.50e-04 (63.1s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  -> no val_loss improvement (5)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a us of the us of the us of a us of a us of a us of a us of a us and david blunkett has said he is to be a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations .
+  epoch 36 batch 20/60 loss=3.2766 (20s elapsed, ~40s left in epoch)
+  epoch 36 batch 40/60 loss=3.3137 (40s elapsed, ~20s left in epoch)
+  epoch 36 batch 60/60 loss=3.3173 (59s elapsed, ~0s left in epoch)
+epoch 36/60 - train_loss=3.3173 val_loss=5.5971 val_ppl=269.64 | R1=0.194 R2=0.023 RL=0.174 div=0.96 | lr=2.50e-04 (63.7s)
+  -> no val_loss improvement (6)
+  -> lowered learning rate to 1.25e-04
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a us of the us of the us of the us of a us of a us and singer is to be a new team to a new european union .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be to be a first open in the first nations .
+  epoch 37 batch 20/60 loss=3.2984 (20s elapsed, ~40s left in epoch)
+  epoch 37 batch 40/60 loss=3.2856 (40s elapsed, ~20s left in epoch)
+  epoch 37 batch 60/60 loss=3.2775 (59s elapsed, ~0s left in epoch)
+epoch 37/60 - train_loss=3.2775 val_loss=5.6031 val_ppl=271.27 | R1=0.198 R2=0.024 RL=0.176 div=0.98 | lr=1.25e-04 (63.5s)
+  -> no val_loss improvement (7)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new team to be to be a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be to return to the first open in the first nations .
+  epoch 38 batch 20/60 loss=3.2310 (20s elapsed, ~40s left in epoch)
+  epoch 38 batch 40/60 loss=3.2450 (40s elapsed, ~20s left in epoch)
+  epoch 38 batch 60/60 loss=3.2606 (59s elapsed, ~0s left in epoch)
+epoch 38/60 - train_loss=3.2606 val_loss=5.6008 val_ppl=270.65 | R1=0.197 R2=0.022 RL=0.176 div=0.99 | lr=1.25e-04 (63.3s)
+  -> no val_loss improvement (8)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new team .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 39 batch 20/60 loss=3.2008 (20s elapsed, ~39s left in epoch)
+  epoch 39 batch 40/60 loss=3.2341 (40s elapsed, ~20s left in epoch)
+  epoch 39 batch 60/60 loss=3.2483 (60s elapsed, ~0s left in epoch)
+epoch 39/60 - train_loss=3.2483 val_loss=5.6064 val_ppl=272.16 | R1=0.198 R2=0.023 RL=0.173 div=0.98 | lr=1.25e-04 (64.0s)
+  -> no val_loss improvement (9)
+  -> lowered learning rate to 6.25e-05
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a us singer is to be a new european team to be to be a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations .
+  epoch 40 batch 20/60 loss=3.2161 (20s elapsed, ~40s left in epoch)
+  epoch 40 batch 40/60 loss=3.2301 (40s elapsed, ~20s left in epoch)
+  epoch 40 batch 60/60 loss=3.2294 (59s elapsed, ~0s left in epoch)
+epoch 40/60 - train_loss=3.2294 val_loss=5.6048 val_ppl=271.73 | R1=0.201 R2=0.024 RL=0.178 div=0.98 | lr=6.25e-05 (63.4s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  -> no val_loss improvement (10)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 41 batch 20/60 loss=3.2216 (20s elapsed, ~39s left in epoch)
+  epoch 41 batch 40/60 loss=3.2131 (39s elapsed, ~20s left in epoch)
+  epoch 41 batch 60/60 loss=3.2216 (59s elapsed, ~0s left in epoch)
+epoch 41/60 - train_loss=3.2216 val_loss=5.6044 val_ppl=271.63 | R1=0.200 R2=0.026 RL=0.177 div=0.99 | lr=6.25e-05 (62.9s)
+  -> no val_loss improvement (11)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a us singer is to be a new team to be to be a new zealand in a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman s first nations union will be a first nations match in the first nations .
+  epoch 42 batch 20/60 loss=3.2151 (20s elapsed, ~39s left in epoch)
+  epoch 42 batch 40/60 loss=3.2146 (39s elapsed, ~20s left in epoch)
+  epoch 42 batch 60/60 loss=3.2134 (58s elapsed, ~0s left in epoch)
+epoch 42/60 - train_loss=3.2134 val_loss=5.6071 val_ppl=272.36 | R1=0.196 R2=0.022 RL=0.173 div=0.98 | lr=6.25e-05 (62.7s)
+  -> no val_loss improvement (12)
+  -> lowered learning rate to 3.13e-05
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new european rugby .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman s first nations union will be a first nations match in the first nations .
+  epoch 43 batch 20/60 loss=3.2176 (20s elapsed, ~39s left in epoch)
+  epoch 43 batch 40/60 loss=3.2043 (39s elapsed, ~20s left in epoch)
+  epoch 43 batch 60/60 loss=3.2027 (59s elapsed, ~0s left in epoch)
+epoch 43/60 - train_loss=3.2027 val_loss=5.6080 val_ppl=272.61 | R1=0.200 R2=0.023 RL=0.175 div=0.99 | lr=3.13e-05 (62.8s)
+  -> no val_loss improvement (13)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new european deal .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 44 batch 20/60 loss=3.2099 (20s elapsed, ~40s left in epoch)
+  epoch 44 batch 40/60 loss=3.1800 (40s elapsed, ~20s left in epoch)
+  epoch 44 batch 60/60 loss=3.2026 (59s elapsed, ~0s left in epoch)
+epoch 44/60 - train_loss=3.2026 val_loss=5.6083 val_ppl=272.67 | R1=0.198 R2=0.025 RL=0.175 div=0.98 | lr=3.13e-05 (63.3s)
+  -> no val_loss improvement (14)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations .
+  epoch 45 batch 20/60 loss=3.1839 (20s elapsed, ~40s left in epoch)
+  epoch 45 batch 40/60 loss=3.1957 (40s elapsed, ~20s left in epoch)
+  epoch 45 batch 60/60 loss=3.1992 (60s elapsed, ~0s left in epoch)
+epoch 45/60 - train_loss=3.1992 val_loss=5.6101 val_ppl=273.18 | R1=0.200 R2=0.023 RL=0.177 div=0.98 | lr=3.13e-05 (64.1s)
+  -> no val_loss improvement (15)
+  -> lowered learning rate to 1.56e-05
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new european rugby .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 46 batch 20/60 loss=3.1901 (20s elapsed, ~40s left in epoch)
+  epoch 46 batch 40/60 loss=3.1952 (40s elapsed, ~20s left in epoch)
+  epoch 46 batch 60/60 loss=3.1941 (59s elapsed, ~0s left in epoch)
+epoch 46/60 - train_loss=3.1941 val_loss=5.6090 val_ppl=272.87 | R1=0.200 R2=0.023 RL=0.178 div=0.98 | lr=1.56e-05 (62.9s)
+  -> no val_loss improvement (16)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new european rugby .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 47 batch 20/60 loss=3.1967 (20s elapsed, ~39s left in epoch)
+  epoch 47 batch 40/60 loss=3.1947 (39s elapsed, ~20s left in epoch)
+  epoch 47 batch 60/60 loss=3.1911 (58s elapsed, ~0s left in epoch)
+epoch 47/60 - train_loss=3.1911 val_loss=5.6087 val_ppl=272.80 | R1=0.201 R2=0.025 RL=0.179 div=0.98 | lr=1.56e-05 (62.7s)
+  -> new best ROUGE-L, saved checkpoint to ck_lead.npz
+  -> no val_loss improvement (17)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 48 batch 20/60 loss=3.1826 (20s elapsed, ~40s left in epoch)
+  epoch 48 batch 40/60 loss=3.1762 (40s elapsed, ~20s left in epoch)
+  epoch 48 batch 60/60 loss=3.1900 (60s elapsed, ~0s left in epoch)
+epoch 48/60 - train_loss=3.1900 val_loss=5.6100 val_ppl=273.15 | R1=0.200 R2=0.025 RL=0.178 div=0.99 | lr=1.56e-05 (63.9s)
+  -> no val_loss improvement (18)
+  -> lowered learning rate to 7.81e-06
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman s first nations union match to win the first open in the first nations match in the norwich union championships .
+  epoch 49 batch 20/60 loss=3.2130 (20s elapsed, ~40s left in epoch)
+  epoch 49 batch 40/60 loss=3.1997 (40s elapsed, ~20s left in epoch)
+  epoch 49 batch 60/60 loss=3.1861 (59s elapsed, ~0s left in epoch)
+epoch 49/60 - train_loss=3.1861 val_loss=5.6105 val_ppl=273.29 | R1=0.202 R2=0.025 RL=0.179 div=0.99 | lr=7.81e-06 (63.6s)
+  -> no val_loss improvement (19)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 50 batch 20/60 loss=3.1944 (20s elapsed, ~40s left in epoch)
+  epoch 50 batch 40/60 loss=3.1771 (40s elapsed, ~20s left in epoch)
+  epoch 50 batch 60/60 loss=3.1855 (59s elapsed, ~0s left in epoch)
+epoch 50/60 - train_loss=3.1855 val_loss=5.6101 val_ppl=273.18 | R1=0.203 R2=0.025 RL=0.178 div=0.98 | lr=7.81e-06 (63.4s)
+  -> no val_loss improvement (20)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 51 batch 20/60 loss=3.1941 (20s elapsed, ~40s left in epoch)
+  epoch 51 batch 40/60 loss=3.1879 (40s elapsed, ~20s left in epoch)
+  epoch 51 batch 60/60 loss=3.1871 (59s elapsed, ~0s left in epoch)
+epoch 51/60 - train_loss=3.1871 val_loss=5.6099 val_ppl=273.13 | R1=0.202 R2=0.025 RL=0.178 div=0.98 | lr=7.81e-06 (63.4s)
+  -> no val_loss improvement (21)
+  -> lowered learning rate to 3.91e-06
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 52 batch 20/60 loss=3.1299 (19s elapsed, ~39s left in epoch)
+  epoch 52 batch 40/60 loss=3.1731 (39s elapsed, ~19s left in epoch)
+  epoch 52 batch 60/60 loss=3.1847 (58s elapsed, ~0s left in epoch)
+epoch 52/60 - train_loss=3.1847 val_loss=5.6099 val_ppl=273.11 | R1=0.203 R2=0.025 RL=0.179 div=0.98 | lr=3.91e-06 (62.4s)
+  -> no val_loss improvement (22)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 53 batch 20/60 loss=3.1926 (20s elapsed, ~40s left in epoch)
+  epoch 53 batch 40/60 loss=3.1951 (40s elapsed, ~20s left in epoch)
+  epoch 53 batch 60/60 loss=3.1836 (59s elapsed, ~0s left in epoch)
+epoch 53/60 - train_loss=3.1836 val_loss=5.6100 val_ppl=273.15 | R1=0.202 R2=0.025 RL=0.178 div=0.99 | lr=3.91e-06 (63.4s)
+  -> no val_loss improvement (23)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 54 batch 20/60 loss=3.1878 (20s elapsed, ~39s left in epoch)
+  epoch 54 batch 40/60 loss=3.1924 (39s elapsed, ~20s left in epoch)
+  epoch 54 batch 60/60 loss=3.1857 (59s elapsed, ~0s left in epoch)
+epoch 54/60 - train_loss=3.1857 val_loss=5.6100 val_ppl=273.14 | R1=0.202 R2=0.025 RL=0.177 div=0.99 | lr=3.91e-06 (63.2s)
+  -> no val_loss improvement (24)
+  -> lowered learning rate to 1.95e-06
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 55 batch 20/60 loss=3.1632 (20s elapsed, ~40s left in epoch)
+  epoch 55 batch 40/60 loss=3.1787 (40s elapsed, ~20s left in epoch)
+  epoch 55 batch 60/60 loss=3.1811 (59s elapsed, ~0s left in epoch)
+epoch 55/60 - train_loss=3.1811 val_loss=5.6103 val_ppl=273.21 | R1=0.202 R2=0.025 RL=0.178 div=0.98 | lr=1.95e-06 (63.1s)
+  -> no val_loss improvement (25)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 56 batch 20/60 loss=3.2012 (20s elapsed, ~40s left in epoch)
+  epoch 56 batch 40/60 loss=3.2002 (40s elapsed, ~20s left in epoch)
+  epoch 56 batch 60/60 loss=3.1825 (59s elapsed, ~0s left in epoch)
+epoch 56/60 - train_loss=3.1825 val_loss=5.6102 val_ppl=273.21 | R1=0.202 R2=0.026 RL=0.178 div=0.98 | lr=1.95e-06 (63.3s)
+  -> no val_loss improvement (26)
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+  epoch 57 batch 20/60 loss=3.1771 (20s elapsed, ~39s left in epoch)
+  epoch 57 batch 40/60 loss=3.1725 (39s elapsed, ~20s left in epoch)
+  epoch 57 batch 60/60 loss=3.1813 (59s elapsed, ~0s left in epoch)
+epoch 57/60 - train_loss=3.1813 val_loss=5.6102 val_ppl=273.21 | R1=0.202 R2=0.026 RL=0.178 div=0.99 | lr=1.95e-06 (62.9s)
+  -> no val_loss improvement (27)
+  -> lowered learning rate to 9.77e-07
+  [val #0] article: ronaldo considering new contract manchester united winger <unk> ronaldo said he is close to agreeing to a new contract at old trafford . the portugal star , who joined in august 2003 on a five year de...
+            reference : the united board have already made an offer to <unk> the contract but i m trying not to think about it , he told the news of the world .
+            prediction: a european commission has been launched to a new deal to a new team to a new deal to a new zealand .
+  [val #1] article: ferrero eyes return to top form former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 . the 2003 french open champion has slipped to 64 in the w...
+            reference : former world number one juan carlos ferrero insists he can get back to his best despite a tough start to 2005 .
+            prediction: england s henman will be set to the first open in the first nations match in the dubai union championships .
+Early stopping: neither val_loss nor ROUGE-L improved for 10 epochs in a row.
+
+Best val ROUGE-L=0.1789 (lead-1 baseline 0.7117), checkpoint saved to ck_lead.npz

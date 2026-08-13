@@ -259,6 +259,71 @@ def dense_backward(d_y, cache):
 # ----------------------------------------------------------------------
 # Softmax + masked cross-entropy loss over the vocabulary, per timestep.
 # ----------------------------------------------------------------------
+def pointer_ce_loss(logits, alpha, enc_ids, p_gen, targets, mask):
+    """Cross-entropy for a pointer-generator decoder.
+
+    The plain decoder can only *generate* a word by picking it out of an
+    8000-way softmax, which it can never do for a name it saw once or twice.
+    A pointer lets it instead *copy* a word straight out of the input, using
+    the attention weights it already computes as a distribution over input
+    positions:
+
+        P_vocab = softmax(logits)                      # generate
+        P_copy[w] = sum of alpha_i over positions i where input_i == w
+        P_final  = p_gen * P_vocab + (1 - p_gen) * P_copy
+
+    p_gen in [0,1] is predicted per step, so the model learns *when* to copy.
+    Loss is -log P_final[target].
+
+    Returns (loss_sum, num_real, d_logits, d_alpha, d_p_gen); d_alpha feeds
+    straight into attention_backward's d_alpha_extra argument.
+    """
+    B, V = logits.shape
+
+    shifted = logits - logits.max(axis=1, keepdims=True)
+    exp = np.exp(shifted)
+    P_vocab = exp / exp.sum(axis=1, keepdims=True)
+
+    # Scatter attention mass onto the vocabulary entries it points at.
+    # add.at accumulates, so a word appearing twice in the input sums both.
+    P_copy = np.zeros_like(P_vocab)
+    np.add.at(P_copy, (np.arange(B)[:, None], enc_ids), alpha)
+
+    P_final = p_gen * P_vocab + (1.0 - p_gen) * P_copy
+
+    rows = np.arange(B)
+    p_target = P_final[rows, targets] + 1e-9
+    loss_sum = -np.sum(np.log(p_target) * mask)
+    num_real = np.sum(mask)
+
+    # dL/dP_final is nonzero only at the target column.
+    g = -(mask / p_target)                                    # (B,)
+
+    d_p_gen = (g * (P_vocab[rows, targets] - P_copy[rows, targets]))[:, None]
+
+    d_P_vocab = np.zeros_like(P_vocab)
+    d_P_vocab[rows, targets] = g * p_gen[:, 0]
+    d_logits = P_vocab * (d_P_vocab - np.sum(d_P_vocab * P_vocab, axis=1, keepdims=True))
+
+    # alpha_i contributed to P_copy[enc_ids_i], so it only gets gradient where
+    # the input token at that position IS the target token.
+    d_copy_at_target = g * (1.0 - p_gen[:, 0])                # (B,)
+    d_alpha = np.where(enc_ids == targets[:, None],
+                       d_copy_at_target[:, None], 0.0)
+
+    return loss_sum, num_real, d_logits, d_alpha, d_p_gen
+
+
+def pointer_final_probs(logits, alpha, enc_ids, p_gen):
+    """Same mixture as above, for inference (no loss/gradients)."""
+    shifted = logits - logits.max(axis=1, keepdims=True)
+    exp = np.exp(shifted)
+    P_vocab = exp / exp.sum(axis=1, keepdims=True)
+    P_copy = np.zeros_like(P_vocab)
+    np.add.at(P_copy, (np.arange(logits.shape[0])[:, None], enc_ids), alpha)
+    return p_gen * P_vocab + (1.0 - p_gen) * P_copy
+
+
 def softmax_ce_loss(logits, targets, mask):
     """
     logits:  (B, V)
