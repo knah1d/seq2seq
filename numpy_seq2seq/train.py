@@ -254,14 +254,23 @@ def main():
             epochs_no_val_gain = 0
         else:
             epochs_no_val_gain += 1
-            print(f"  -> no val_loss improvement ({epochs_no_val_gain})")
-            # Never decay during the warmup epochs: early loss is still
-            # falling fast and cutting the LR then just stalls training.
-            if (epoch > args.lr_warmup
-                    and epochs_no_val_gain % args.lr_decay_patience == 0):
-                current_lr *= 0.5
-                optimizer.set_lr(current_lr)
-                print(f"  -> lowered learning rate to {current_lr:.2e}")
+
+        # Decay the LR only when BOTH signals have stalled, for the same
+        # reason as early stopping. Keyed on val_loss alone it collapsed the
+        # LR from 1e-3 to 1.6e-5 between epochs 8 and 28 of the pointer run -
+        # while validation ROUGE-L was still climbing from 0.55 to 0.60.
+        # val_loss rises early here because the model memorises the training
+        # targets; it is not evidence that learning has stopped.
+        stalled = min(epochs_no_val_gain, epochs_no_rouge_gain)
+        if stalled > 0:
+            print(f"  -> no improvement ({stalled}); "
+                  f"val_loss {epochs_no_val_gain}, ROUGE-L {epochs_no_rouge_gain}")
+        # Never decay during the warmup epochs: early loss is still falling
+        # fast and cutting the LR then just stalls training.
+        if epoch > args.lr_warmup and stalled > 0 and stalled % args.lr_decay_patience == 0:
+            current_lr *= 0.5
+            optimizer.set_lr(current_lr)
+            print(f"  -> lowered learning rate to {current_lr:.2e}")
 
         if epoch % args.sample_every == 0:
             show_samples(model, ds)
@@ -271,7 +280,6 @@ def main():
         # rises from overfitting, while ROUGE-L keeps climbing for another 30
         # - an earlier version stopped three runs at epoch ~10 with the model
         # still emitting one generic sentence for every article.
-        stalled = min(epochs_no_val_gain, epochs_no_rouge_gain)
         if stalled >= args.patience:
             print(f"Early stopping: neither val_loss nor ROUGE-L improved for "
                   f"{args.patience} epochs in a row.", flush=True)
