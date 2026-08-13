@@ -1,0 +1,127 @@
+train examples: 1864, val examples: 207
+vocab size: 8000
+parameters: 3,185,856  (tie_weights=False)
+lead-1 baseline (emit the input's first sentence): R1=0.193 R2=0.044 RL=0.180
+  -> the model needs to beat this to have learned anything useful.
+
+  epoch 1 batch 20/59 loss=8.2437 (13s elapsed, ~26s left in epoch)
+  epoch 1 batch 40/59 loss=7.6043 (27s elapsed, ~13s left in epoch)
+  epoch 1 batch 59/59 loss=7.3413 (40s elapsed, ~0s left in epoch)
+epoch 1/40 - train_loss=7.3413 val_loss=6.6572 val_ppl=778.35 | R1=0.058 R2=0.000 RL=0.058 div=0.00 | lr=1.00e-03 (42.1s)
+  -> new best ROUGE-L, saved checkpoint to ck_ref.npz
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: to
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: to
+  epoch 2 batch 20/59 loss=6.2968 (15s elapsed, ~29s left in epoch)
+  epoch 2 batch 40/59 loss=6.3058 (29s elapsed, ~14s left in epoch)
+  epoch 2 batch 59/59 loss=6.3004 (42s elapsed, ~0s left in epoch)
+epoch 2/40 - train_loss=6.3004 val_loss=6.5792 val_ppl=719.94 | R1=0.040 R2=0.000 RL=0.040 div=0.00 | lr=1.00e-03 (44.4s)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: to to to to
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: to to to to
+  epoch 3 batch 20/59 loss=6.1130 (14s elapsed, ~27s left in epoch)
+  epoch 3 batch 40/59 loss=6.1093 (28s elapsed, ~13s left in epoch)
+  epoch 3 batch 59/59 loss=6.1180 (41s elapsed, ~0s left in epoch)
+epoch 3/40 - train_loss=6.1180 val_loss=6.5318 val_ppl=686.60 | R1=0.037 R2=0.000 RL=0.037 div=0.00 | lr=1.00e-03 (43.4s)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to to to to to to
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to to to to to to
+  epoch 4 batch 20/59 loss=5.9662 (14s elapsed, ~28s left in epoch)
+  epoch 4 batch 40/59 loss=5.9773 (28s elapsed, ~13s left in epoch)
+  epoch 4 batch 59/59 loss=5.9819 (40s elapsed, ~0s left in epoch)
+epoch 4/40 - train_loss=5.9819 val_loss=6.5132 val_ppl=674.00 | R1=0.040 R2=0.000 RL=0.040 div=0.00 | lr=1.00e-03 (42.4s)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to to to to to
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to to to to to
+  epoch 5 batch 20/59 loss=5.8186 (14s elapsed, ~27s left in epoch)
+  epoch 5 batch 40/59 loss=5.8347 (28s elapsed, ~13s left in epoch)
+  epoch 5 batch 59/59 loss=5.8677 (41s elapsed, ~0s left in epoch)
+epoch 5/40 - train_loss=5.8677 val_loss=6.4791 val_ppl=651.40 | R1=0.061 R2=0.000 RL=0.057 div=0.01 | lr=1.00e-03 (43.5s)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to to to for in in
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to to to for in in
+  epoch 6 batch 20/59 loss=5.7485 (14s elapsed, ~27s left in epoch)
+  epoch 6 batch 40/59 loss=5.7481 (28s elapsed, ~13s left in epoch)
+  epoch 6 batch 59/59 loss=5.7664 (40s elapsed, ~0s left in epoch)
+epoch 6/40 - train_loss=5.7664 val_loss=6.5045 val_ppl=668.12 | R1=0.050 R2=0.001 RL=0.049 div=0.02 | lr=1.00e-03 (42.5s)
+  -> no val_loss improvement (1/6)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to to to in in us
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to to to in in us
+  epoch 7 batch 20/59 loss=5.6188 (14s elapsed, ~27s left in epoch)
+  epoch 7 batch 40/59 loss=5.6453 (26s elapsed, ~12s left in epoch)
+  epoch 7 batch 59/59 loss=5.6643 (33s elapsed, ~0s left in epoch)
+epoch 7/40 - train_loss=5.6643 val_loss=6.5177 val_ppl=677.00 | R1=0.048 R2=0.001 RL=0.047 div=0.05 | lr=1.00e-03 (33.8s)
+  -> no val_loss improvement (2/6)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to to to in in us in us
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to to to in the in us
+  epoch 8 batch 20/59 loss=5.5376 (7s elapsed, ~14s left in epoch)
+  epoch 8 batch 40/59 loss=5.5525 (14s elapsed, ~7s left in epoch)
+  epoch 8 batch 59/59 loss=5.5683 (21s elapsed, ~0s left in epoch)
+epoch 8/40 - train_loss=5.5683 val_loss=6.5487 val_ppl=698.34 | R1=0.049 R2=0.000 RL=0.048 div=0.03 | lr=1.00e-03 (22.2s)
+  -> no val_loss improvement (3/6)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to to to new us in us
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to to us to us us
+  epoch 9 batch 20/59 loss=5.4006 (7s elapsed, ~14s left in epoch)
+  epoch 9 batch 40/59 loss=5.4549 (14s elapsed, ~7s left in epoch)
+  epoch 9 batch 59/59 loss=5.4810 (21s elapsed, ~0s left in epoch)
+epoch 9/40 - train_loss=5.4810 val_loss=6.5784 val_ppl=719.38 | R1=0.047 R2=0.000 RL=0.046 div=0.10 | lr=1.00e-03 (22.1s)
+  -> no val_loss improvement (4/6)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to to to us to the us
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to to us to us in us
+  epoch 10 batch 20/59 loss=5.3206 (7s elapsed, ~14s left in epoch)
+  epoch 10 batch 40/59 loss=5.3580 (14s elapsed, ~7s left in epoch)
+  epoch 10 batch 59/59 loss=5.3965 (21s elapsed, ~0s left in epoch)
+epoch 10/40 - train_loss=5.3965 val_loss=6.6065 val_ppl=739.91 | R1=0.053 R2=0.001 RL=0.050 div=0.06 | lr=1.00e-03 (22.1s)
+  -> no val_loss improvement (5/6)
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to set for us in the bn
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us s us to the the us
+  epoch 11 batch 20/59 loss=5.2620 (7s elapsed, ~14s left in epoch)
+  epoch 11 batch 40/59 loss=5.3038 (14s elapsed, ~7s left in epoch)
+  epoch 11 batch 59/59 loss=5.3189 (21s elapsed, ~0s left in epoch)
+epoch 11/40 - train_loss=5.3189 val_loss=6.6585 val_ppl=779.36 | R1=0.043 R2=0.000 RL=0.042 div=0.15 | lr=1.00e-03 (22.1s)
+  -> no val_loss improvement (6/6)
+  -> lowered learning rate to 5.00e-04
+  [val #0] article: <unk> <unk> has admitted that she might consider a competitive return to tennis if an appearance in thailand later this month goes well . the former world number one will play at the <unk> women s ope...
+            reference : <unk> hints at playing comeback
+            prediction: us to get of the , bn bn , bn bn of
+  [val #1] article: ministers are unhappy about plans to use whitehall cash to keep council tax bills down , local government minister nick <unk> has acknowledged . gordon brown <unk> 512 m from central to local governme...
+            reference : cabinet anger at brown cash <unk>
+            prediction: us to us to the the bn us
+Early stopping: no val_loss improvement for 6 epochs in a row.
+
+Best val ROUGE-L=0.0579 (lead-1 baseline 0.1797), checkpoint saved to ck_ref.npz

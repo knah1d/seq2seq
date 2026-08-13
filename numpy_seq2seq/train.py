@@ -147,8 +147,8 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--checkpoint", type=str, default="checkpoint.npz")
     parser.add_argument("--sample_every", type=int, default=1)
-    parser.add_argument("--patience", type=int, default=6,
-                         help="stop after this many epochs with no val_loss improvement")
+    parser.add_argument("--patience", type=int, default=10,
+                         help="stop after this many epochs with neither val_loss nor ROUGE-L improving")
     parser.add_argument("--lr_decay_patience", type=int, default=3,
                          help="halve the LR after this many epochs with no val_loss improvement")
     parser.add_argument("--lr_warmup", type=int, default=8,
@@ -248,7 +248,7 @@ def main():
             epochs_no_val_gain = 0
         else:
             epochs_no_val_gain += 1
-            print(f"  -> no val_loss improvement ({epochs_no_val_gain}/{args.patience})")
+            print(f"  -> no val_loss improvement ({epochs_no_val_gain})")
             # Never decay during the warmup epochs: early loss is still
             # falling fast and cutting the LR then just stalls training.
             if (epoch > args.lr_warmup
@@ -260,8 +260,15 @@ def main():
         if epoch % args.sample_every == 0:
             show_samples(model, ds)
 
-        if epochs_no_val_gain >= args.patience:
-            print(f"Early stopping: no val_loss improvement for {args.patience} epochs in a row.")
+        # Stop only when BOTH signals have stalled. val_loss alone is wrong:
+        # on a small validation set it bottoms out after ~4 epochs and then
+        # rises from overfitting, while ROUGE-L keeps climbing for another 30
+        # - an earlier version stopped three runs at epoch ~10 with the model
+        # still emitting one generic sentence for every article.
+        stalled = min(epochs_no_val_gain, epochs_no_rouge_gain)
+        if stalled >= args.patience:
+            print(f"Early stopping: neither val_loss nor ROUGE-L improved for "
+                  f"{args.patience} epochs in a row.", flush=True)
             break
 
     print(f"\nBest val ROUGE-L={best_rouge_l:.4f} (lead-1 baseline {baseline['rougeL']:.4f}), "
